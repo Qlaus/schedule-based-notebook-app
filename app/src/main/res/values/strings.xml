@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Not Takvimi</string>
+    <string name="setup_title">Kurulum tamam</string>
+    <string name="setup_body">Uygulama iskeleti çalışıyor. Bir sonraki adımda Google ile giriş ve takvim gelecek.</string>
+    <string name="setup_client_missing">Google OAuth istemci kimliği henüz ayarlanmadı.</string>
+    <string name="setup_client_ok">Google OAuth istemci kimliği ayarlı.</string>
+</resources>
