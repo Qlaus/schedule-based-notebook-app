@@ -20,7 +20,7 @@
 - CI: `checkNoGms`, unit tests, debug/release APK artifacts.
 - Docs: Google Cloud setup, device setup.
 
-## Phase 1 — Calendar + local notes
+## Phase 1 — Calendar + local notes ✅
 1. AppAuth sign-in, encrypted token storage, sign-out, re-auth state.
 2. Calendar list with visibility toggles; ranged event fetch cached in Room.
 3. Month, week, day (time grid, overlapping events side by side) and agenda views; pull-to-refresh.
