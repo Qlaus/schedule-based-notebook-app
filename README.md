@@ -27,7 +27,9 @@ See [docs/PLAN.md](docs/PLAN.md) for the full plan and decisions.
 
 ## Getting an APK
 
-Every push builds APKs on GitHub Actions (workflow **Android build**). Open the run → *Artifacts* →
+Easiest (no PC): on the tablet open the repo's **Releases** page → **Development build (latest)** → tap the `.apk`.
+
+Every push also builds APKs on GitHub Actions (workflow **Android build**). Open the run → *Artifacts* →
 `calnotes-debug-apk`. Install with `adb install -r app-debug.apk`. Details: [docs/device-setup.md](docs/device-setup.md).
 
 ## Building locally

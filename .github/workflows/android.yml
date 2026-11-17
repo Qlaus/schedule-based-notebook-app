@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
@@ -44,6 +47,21 @@ jobs:
           name: calnotes-release-apk
           path: app/build/outputs/apk/release/*.apk
           retention-days: 30
+
+      - name: Publish debug APK as "dev-latest" pre-release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          APK="NotTakvimi-${SHORT_SHA}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$APK"
+          gh release delete dev-latest --cleanup-tag --yes || true
+          gh release create dev-latest "$APK" \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Development build (latest)" \
+            --notes "Latest debug APK from branch ${GITHUB_REF_NAME} at ${SHORT_SHA}. Download the .apk on the tablet and install it."
 
       - name: Upload test reports
         if: failure()
