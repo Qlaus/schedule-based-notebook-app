@@ -8,6 +8,7 @@
 | 2 | APK delivery | **GitHub Actions** builds debug + release APKs on every push (artifacts). |
 | 3 | Accent color | Calm blue `#3B6FE0` (dark theme `#7FA3F2`). |
 | 4 | Tapping an event | Always open the **event detail** first (with "Create note" / attached notes). |
+| 6 | Series ↔ notebook | Linking a recurring event's series to a notebook places every new occurrence note in it. |
 | 5 | Calendar marker | **`📝 ` title prefix, on by default** (editable events only). Description marker optional, off by default. `extendedProperties.private` always stores note IDs. |
 | – | Week start / clock | Monday, 24-hour. |
 | – | Calendar cache window | 3 months back, 12 months ahead, plus on-demand ranges. |
@@ -30,7 +31,12 @@
 7. Sync triggers: start, foreground, pull-to-refresh, periodic WorkManager.
 8. Unit tests: repositories, link matching, outbox, token refresh.
 
-## Phase 2 — Notebooks, search, calendar marker
+## Phase 2 — Notebooks, search, calendar marker 🧪
+- Navigation rail (tablet) / bottom bar (narrow): Calendar · Notebooks · Search · Settings.
+- Notebooks CRUD with colors; deleting keeps notes (moved to "unfiled"). Standalone notes.
+- Event detail: link occurrence/series to a notebook; note editor: move between notebooks.
+- Search over notes and cached events by title, notebook, event name and date spellings.
+- Calendar markers via `MarkerSync` (title prefix on by default, description block optional).
 ## Phase 3 — Drive `appDataFolder` sync (LWW + backups, tombstones, status indicator)
 ## Phase 4 — Local reminders, Markdown/PDF export
 ## Phase 5 — Stylus ink (androidx.ink) and rich text; revisit note/sync format

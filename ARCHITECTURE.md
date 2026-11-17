@@ -39,7 +39,10 @@ Notebook 1───* Note 1───* EventLink
                  │
                  └──* NoteBackup        (versions overwritten by sync conflicts)
 
+Notebook 1───* NotebookLink             (event occurrence or series → notebook; new notes go there)
+
 CalendarEntity 1───* EventEntity        (offline cache of Google Calendar)
+EventMarker                             (what we last wrote to a Google event: prefix / block / note ids)
 PendingEventOp                          (outbox for event create/update/delete)
 SyncState                               (key/value: Drive page token, cached ranges, ...)
 ```
@@ -89,8 +92,20 @@ App start, app foreground (`ProcessLifecycleOwner`), pull-to-refresh, and period
 
 ## Calendar write-back (Phase 2)
 
-- `extendedProperties.private.calnotesNoteIds` stores attached note IDs.
-- Title prefix `📝 ` is added (default **on**) only where the user may edit the event
-  (organizer or `guestsCanModify`). The app strips the prefix when displaying titles and removes it
-  when the last note is detached. The existing description is never modified unless the optional
-  description marker setting is enabled.
+`MarkerSync.reconcile()` runs on every sync and right after note/settings changes:
+- Desired state per Google event (instance id, or series master id for series links): the note ids
+  of active links, plus title/description markers according to settings.
+- It compares with `event_markers` (what it last wrote) and only PATCHes differences, after a fresh
+  `events.get`, touching just `summary` / `description` / `extendedProperties.private.calnotesNoteIds`.
+- Title prefix `📝 ` (default **on**); description block `📝 Notes attached (Not Takvimi)` appended at
+  the end (default off). Both are added/removed only by `CalendarMarker` (`:core`), so the user's own
+  text is never changed. The cache stores titles/descriptions without markers plus `markerIn*` flags;
+  in-app edits re-add the markers when sending.
+- Events the user cannot edit (attendee copies, birthdays, read-only calendars) are skipped once and
+  remembered; the note still shows in the app.
+
+## Database migrations
+
+Room schema version 2. `AppDatabase.MIGRATION_1_2` adds `notebook_links`, `event_markers` and the
+`events.markerInTitle/markerInDescription` columns. `MigrationTest` builds a v1 database with data and
+opens it with the current schema, so Room validates the migration in CI.
