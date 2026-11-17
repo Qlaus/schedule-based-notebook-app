@@ -81,7 +81,7 @@ interface NoteDao {
     @Query("SELECT * FROM notes WHERE id = :id")
     suspend fun get(id: String): NoteEntity?
 
-    @Query("SELECT * FROM notes WHERE deletedAt IS NULL AND id IN (:ids) ORDER BY createdAt")
+    @Query("SELECT * FROM notes WHERE deletedAt IS NULL AND id IN (:ids) ORDER BY createdAt, rowid")
     fun observeActive(ids: List<String>): Flow<List<NoteEntity>>
 
     @Upsert
