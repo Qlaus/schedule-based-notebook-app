@@ -8,6 +8,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import io.github.qlaus.calnotes.core.calendar.CalendarMarker
 import io.github.qlaus.calnotes.core.calendar.RepeatRule
 import java.time.LocalDate
 import java.time.LocalTime
@@ -53,13 +54,15 @@ object EventMapping {
         val end = parseMillis(dto.end, zone) ?: start
         val organizerIsUs = dto.organizer == null || dto.organizer.self == true || dto.organizer.email == calendarId
         val readOnlyType = dto.eventType == "birthday" || dto.eventType == "fromGmail"
+        val title = CalendarMarker.stripTitle(dto.summary.orEmpty())
+        val description = CalendarMarker.stripDescription(dto.description.orEmpty())
         return EventEntity(
             calendarId = calendarId,
             id = dto.id,
             recurringEventId = dto.recurringEventId,
             originalStartMillis = parseMillis(dto.originalStartTime, zone),
-            title = dto.summary.orEmpty(),
-            description = dto.description.orEmpty(),
+            title = title.text,
+            description = description.text,
             location = dto.location.orEmpty(),
             startMillis = start,
             endMillis = maxOf(end, start),
@@ -71,6 +74,8 @@ object EventMapping {
             htmlLink = dto.htmlLink,
             updated = dto.updated,
             pendingSync = false,
+            markerInTitle = title.hadMarker,
+            markerInDescription = description.hadMarker,
         )
     }
 
@@ -79,10 +84,18 @@ object EventMapping {
      * can switch between all-day and timed events. [includeTimes] = false patches text fields only
      * (used for "whole series" edits).
      */
-    fun toPayload(draft: EventDraft, zone: ZoneId, includeTimes: Boolean, includeRecurrence: Boolean): JsonObject =
+    fun toPayload(
+        draft: EventDraft,
+        zone: ZoneId,
+        includeTimes: Boolean,
+        includeRecurrence: Boolean,
+        markerInTitle: Boolean = false,
+        markerInDescription: Boolean = false,
+    ): JsonObject =
         buildJsonObject {
-            put("summary", draft.title)
-            put("description", draft.description)
+            // Keep our note markers when the user edits the text (the cache stores text without them).
+            put("summary", CalendarMarker.applyTitle(draft.title, markerInTitle))
+            put("description", CalendarMarker.applyDescription(draft.description, markerInDescription))
             put("location", draft.location)
             if (includeTimes) {
                 putJsonObject("start") { putDateTime(draft.allDay, draft.startDate, draft.startTime, zone, isEnd = false) }

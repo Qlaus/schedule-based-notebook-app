@@ -44,6 +44,12 @@ data class EventDto(
     val eventType: String? = null,
     val htmlLink: String? = null,
     val updated: String? = null,
+    val extendedProperties: ExtendedPropertiesDto? = null,
+)
+
+@Serializable
+data class ExtendedPropertiesDto(
+    val private: Map<String, String>? = null,
 )
 
 @Serializable

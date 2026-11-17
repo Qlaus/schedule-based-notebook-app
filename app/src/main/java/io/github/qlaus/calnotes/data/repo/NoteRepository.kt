@@ -51,7 +51,7 @@ class NoteRepository @Inject constructor(
         }
 
     /** Creates an empty note attached to [event] (this occurrence or its whole series). Returns the note id. */
-    suspend fun createForEvent(event: EventEntity, scope: EventLinkScope, title: String): String {
+    suspend fun createForEvent(event: EventEntity, scope: EventLinkScope, title: String, notebookId: String? = null): String {
         val now = clock.millis()
         val noteId = UUID.randomUUID().toString()
         val effectiveScope = if (event.recurringEventId == null) EventLinkScope.INSTANCE else scope
@@ -60,7 +60,7 @@ class NoteRepository @Inject constructor(
                 NoteEntity(
                     id = noteId,
                     accountId = account.accountId,
-                    notebookId = null,
+                    notebookId = notebookId,
                     title = title,
                     body = "",
                     createdAt = now,
@@ -93,6 +93,44 @@ class NoteRepository @Inject constructor(
         }
         return noteId
     }
+
+    /** Creates a note that is not attached to any event, optionally inside a notebook. */
+    suspend fun createStandalone(notebookId: String?, title: String = ""): String {
+        val now = clock.millis()
+        val id = UUID.randomUUID().toString()
+        noteDao.upsert(
+            NoteEntity(
+                id = id, accountId = account.accountId, notebookId = notebookId, title = title, body = "",
+                createdAt = now, updatedAt = now, deletedAt = null, version = 1, dirty = true,
+                remoteFileId = null, remoteVersion = null,
+            ),
+        )
+        return id
+    }
+
+    /** Moves a note into a notebook, or out of any notebook with null. */
+    suspend fun moveToNotebook(noteId: String, notebookId: String?) {
+        val current = noteDao.get(noteId) ?: return
+        if (current.notebookId == notebookId) return
+        noteDao.upsert(current.copy(notebookId = notebookId, updatedAt = clock.millis(), version = current.version + 1, dirty = true))
+    }
+
+    /** Notes in a notebook (or unfiled with null), newest event/creation first. */
+    fun observeNotesIn(notebookId: String?): Flow<List<NoteWithLinks>> {
+        val notes = if (notebookId == null) noteDao.observeUnfiled() else noteDao.observeInNotebook(notebookId)
+        return combine(notes, linkDao.observeActive()) { list, links ->
+            val byNote = links.groupBy { it.noteId }
+            list.map { NoteWithLinks(it, byNote[it.id].orEmpty()) }
+                .sortedByDescending { n -> n.links.maxOfOrNull { it.eventStartSnapshot } ?: n.note.createdAt }
+        }
+    }
+
+    /** All active notes with their links (for search). */
+    val allNotesWithLinks: Flow<List<NoteWithLinks>> =
+        combine(noteDao.observeAllActive(), linkDao.observeActive()) { list, links ->
+            val byNote = links.groupBy { it.noteId }
+            list.map { NoteWithLinks(it, byNote[it.id].orEmpty()) }
+        }
 
     /** Saves title/body. No-op if nothing changed, so autosave does not bump versions needlessly. */
     suspend fun updateContent(noteId: String, title: String, body: String) {

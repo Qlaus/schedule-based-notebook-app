@@ -45,6 +45,13 @@ interface EventDao {
     )
     fun observe(calendarId: String, id: String): Flow<EventWithCalendar?>
 
+    @Query(
+        """SELECT e.*, c.summary AS calendarName, c.colorHex AS calendarColor
+           FROM events e JOIN calendars c ON c.id = e.calendarId
+           WHERE c.visible = 1 AND e.status != 'cancelled' ORDER BY e.startMillis"""
+    )
+    fun observeAllVisible(): Flow<List<EventWithCalendar>>
+
     @Query("SELECT * FROM events WHERE calendarId = :calendarId AND id = :id")
     suspend fun get(calendarId: String, id: String): EventEntity?
 
@@ -66,6 +73,12 @@ interface EventDao {
     @Query("UPDATE events SET id = :newId, pendingSync = 0 WHERE calendarId = :calendarId AND id = :oldId")
     suspend fun replaceId(calendarId: String, oldId: String, newId: String)
 
+    @Query(
+        """UPDATE events SET markerInTitle = :title, markerInDescription = :description
+           WHERE calendarId = :calendarId AND (id = :eventId OR recurringEventId = :eventId)"""
+    )
+    suspend fun setMarkerFlags(calendarId: String, eventId: String, title: Boolean, description: Boolean)
+
     @Query("DELETE FROM events WHERE calendarId NOT IN (SELECT id FROM calendars)")
     suspend fun deleteOrphans()
 
@@ -86,6 +99,18 @@ interface NoteDao {
 
     @Upsert
     suspend fun upsert(note: NoteEntity)
+
+    @Query("SELECT * FROM notes WHERE deletedAt IS NULL")
+    fun observeAllActive(): Flow<List<NoteEntity>>
+
+    @Query("SELECT * FROM notes WHERE deletedAt IS NULL AND notebookId = :notebookId")
+    fun observeInNotebook(notebookId: String): Flow<List<NoteEntity>>
+
+    @Query("SELECT * FROM notes WHERE deletedAt IS NULL AND notebookId IS NULL")
+    fun observeUnfiled(): Flow<List<NoteEntity>>
+
+    @Query("SELECT * FROM notes WHERE deletedAt IS NULL AND notebookId = :notebookId")
+    suspend fun activeInNotebook(notebookId: String): List<NoteEntity>
 }
 
 @Dao
@@ -116,6 +141,63 @@ interface EventLinkDao {
 
     @Query("UPDATE event_links SET deletedAt = :now, updatedAt = :now WHERE noteId = :noteId")
     suspend fun softDeleteForNote(noteId: String, now: Long)
+
+    @Query("SELECT * FROM event_links WHERE deletedAt IS NULL AND eventDeleted = 0")
+    suspend fun activeLiving(): List<EventLinkEntity>
+}
+
+@Dao
+interface NotebookDao {
+    @Query(
+        """SELECT n.*, (SELECT COUNT(*) FROM notes WHERE notes.notebookId = n.id AND notes.deletedAt IS NULL) AS noteCount
+           FROM notebooks n WHERE n.deletedAt IS NULL ORDER BY n.title COLLATE NOCASE"""
+    )
+    fun observeWithCounts(): Flow<List<NotebookWithCount>>
+
+    @Query("SELECT * FROM notebooks WHERE deletedAt IS NULL ORDER BY title COLLATE NOCASE")
+    fun observeActive(): Flow<List<NotebookEntity>>
+
+    @Query("SELECT * FROM notebooks WHERE id = :id")
+    fun observe(id: String): Flow<NotebookEntity?>
+
+    @Query("SELECT * FROM notebooks WHERE id = :id")
+    suspend fun get(id: String): NotebookEntity?
+
+    @Upsert
+    suspend fun upsert(notebook: NotebookEntity)
+
+    @Query("SELECT * FROM notebook_links WHERE deletedAt IS NULL")
+    fun observeActiveLinks(): Flow<List<NotebookLinkEntity>>
+
+    @Query("SELECT * FROM notebook_links WHERE deletedAt IS NULL")
+    suspend fun activeLinks(): List<NotebookLinkEntity>
+
+    @Insert
+    suspend fun insertLink(link: NotebookLinkEntity)
+
+    @Query("UPDATE notebook_links SET deletedAt = :now WHERE id = :id")
+    suspend fun softDeleteLink(id: String, now: Long)
+
+    @Query("UPDATE notebook_links SET deletedAt = :now WHERE notebookId = :notebookId")
+    suspend fun softDeleteLinksForNotebook(notebookId: String, now: Long)
+
+    @Query("UPDATE notebook_links SET eventId = :newId WHERE calendarId = :calendarId AND eventId = :oldId")
+    suspend fun remapEventId(calendarId: String, oldId: String, newId: String)
+}
+
+@Dao
+interface EventMarkerDao {
+    @Query("SELECT * FROM event_markers")
+    suspend fun all(): List<EventMarkerEntity>
+
+    @Upsert
+    suspend fun upsert(marker: EventMarkerEntity)
+
+    @Query("DELETE FROM event_markers WHERE calendarId = :calendarId AND eventId = :eventId")
+    suspend fun delete(calendarId: String, eventId: String)
+
+    @Query("DELETE FROM event_markers")
+    suspend fun clear()
 }
 
 @Dao

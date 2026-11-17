@@ -19,7 +19,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import io.github.qlaus.calnotes.auth.AuthStatus
 import io.github.qlaus.calnotes.ui.auth.AuthViewModel
 import io.github.qlaus.calnotes.ui.auth.SignInScreen
-import io.github.qlaus.calnotes.ui.calendar.CalendarViewModel
 
 @Composable
 fun AppRoot() {
@@ -40,9 +39,6 @@ fun AppRoot() {
         }
         AuthStatus.SignedOut -> SignInScreen(authViewModel, needsReauth = false)
         AuthStatus.NeedsReauth -> SignInScreen(authViewModel, needsReauth = true)
-        is AuthStatus.SignedIn -> {
-            val calendarViewModel: CalendarViewModel = hiltViewModel()
-            MainScreen(calendarViewModel, s.email, onSignOut = authViewModel::signOut)
-        }
+        is AuthStatus.SignedIn -> MainScreen(s.email, onSignOut = authViewModel::signOut)
     }
 }

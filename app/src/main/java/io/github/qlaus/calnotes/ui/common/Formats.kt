@@ -46,6 +46,13 @@ object Formats {
     /** Monday-based week start. */
     fun weekStart(date: LocalDate): LocalDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
+    /** Several spellings of a date so searches like "12 kasım", "2026-11" or "12.11.2026" match. */
+    fun searchDates(millis: Long, zone: ZoneId = ZoneId.systemDefault()): String {
+        val d = date(millis, zone)
+        return listOf("d MMMM yyyy EEEE", "d MMM", "yyyy-MM-dd", "dd.MM.yyyy", "d.M.yyyy", "LLLL")
+            .joinToString(" ") { DateTimeFormatter.ofPattern(it, locale).format(d) }
+    }
+
     fun parseColor(hex: String?, fallback: Color): Color =
         hex?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() } ?: fallback
 }

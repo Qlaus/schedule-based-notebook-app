@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Checkbox
@@ -48,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.qlaus.calnotes.R
+import io.github.qlaus.calnotes.ui.nav.DetailTarget
 import io.github.qlaus.calnotes.sync.SyncStatus
 import io.github.qlaus.calnotes.ui.common.Formats
 import io.github.qlaus.calnotes.ui.theme.Accent
@@ -55,8 +55,7 @@ import io.github.qlaus.calnotes.ui.theme.Accent
 @Composable
 fun CalendarPane(
     viewModel: CalendarViewModel,
-    accountEmail: String?,
-    onSignOut: () -> Unit,
+    onShow: (DetailTarget) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val mode by viewModel.mode.collectAsState()
@@ -66,27 +65,27 @@ fun CalendarPane(
 
     Box(modifier) {
         Column(Modifier.fillMaxSize()) {
-            CalendarHeader(viewModel, accountEmail, onSignOut)
+            CalendarHeader(viewModel)
             PullToRefreshBox(
                 isRefreshing = refreshing,
                 onRefresh = viewModel::refresh,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                val onEvent: (EventUi) -> Unit = { viewModel.show(DetailTarget.Event(it.event.calendarId, it.event.id)) }
+                val onEvent: (EventUi) -> Unit = { onShow(DetailTarget.Event(it.event.calendarId, it.event.id)) }
                 when (mode) {
                     CalendarMode.MONTH -> MonthView(anchor, events, onDayClick = viewModel::openDay, onEventClick = onEvent)
                     CalendarMode.WEEK -> TimeGridView(
                         days = (0 until 7).map { Formats.weekStart(anchor).plusDays(it.toLong()) },
                         events = events,
                         onEventClick = onEvent,
-                        onSlotClick = { d, t -> viewModel.show(DetailTarget.EditEvent(presetDate = d, presetTime = t)) },
+                        onSlotClick = { d, t -> onShow(DetailTarget.EditEvent(presetDate = d, presetTime = t)) },
                         onDayHeaderClick = viewModel::openDay,
                     )
                     CalendarMode.DAY -> TimeGridView(
                         days = listOf(anchor),
                         events = events,
                         onEventClick = onEvent,
-                        onSlotClick = { d, t -> viewModel.show(DetailTarget.EditEvent(presetDate = d, presetTime = t)) },
+                        onSlotClick = { d, t -> onShow(DetailTarget.EditEvent(presetDate = d, presetTime = t)) },
                         onDayHeaderClick = {},
                     )
                     CalendarMode.AGENDA -> AgendaView(anchor, events, onEventClick = onEvent)
@@ -94,7 +93,7 @@ fun CalendarPane(
             }
         }
         ExtendedFloatingActionButton(
-            onClick = { viewModel.show(DetailTarget.EditEvent(presetDate = anchor)) },
+            onClick = { onShow(DetailTarget.EditEvent(presetDate = anchor)) },
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
             text = { Text(stringResource(R.string.new_event)) },
             containerColor = MaterialTheme.colorScheme.primary,
@@ -105,7 +104,7 @@ fun CalendarPane(
 }
 
 @Composable
-private fun CalendarHeader(viewModel: CalendarViewModel, accountEmail: String?, onSignOut: () -> Unit) {
+private fun CalendarHeader(viewModel: CalendarViewModel) {
     val mode by viewModel.mode.collectAsState()
     val anchor by viewModel.anchor.collectAsState()
     val calendars by viewModel.calendars.collectAsState()
@@ -113,7 +112,6 @@ private fun CalendarHeader(viewModel: CalendarViewModel, accountEmail: String?, 
     val pending by viewModel.pendingOps.collectAsState()
     val outboxError by viewModel.outboxError.collectAsState()
     var calendarsMenu by remember { mutableStateOf(false) }
-    var accountMenu by remember { mutableStateOf(false) }
 
     val title = when (mode) {
         CalendarMode.DAY -> Formats.dayLong(anchor)
@@ -148,16 +146,6 @@ private fun CalendarHeader(viewModel: CalendarViewModel, accountEmail: String?, 
                             onClick = { viewModel.setCalendarVisible(cal.id, !cal.visible) },
                         )
                     }
-                }
-            }
-            Box {
-                IconButton(onClick = { accountMenu = true }) { Icon(Icons.Outlined.AccountCircle, stringResource(R.string.account)) }
-                DropdownMenu(expanded = accountMenu, onDismissRequest = { accountMenu = false }) {
-                    accountEmail?.let { DropdownMenuItem(text = { Text(it) }, onClick = {}, enabled = false) }
-                    DropdownMenuItem(text = { Text(stringResource(R.string.sign_out)) }, onClick = {
-                        accountMenu = false
-                        onSignOut()
-                    })
                 }
             }
         }

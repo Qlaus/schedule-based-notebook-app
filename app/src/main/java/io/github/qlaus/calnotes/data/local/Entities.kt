@@ -1,5 +1,6 @@
 package io.github.qlaus.calnotes.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
@@ -113,6 +114,10 @@ data class EventEntity(
     val updated: String?,
     /** True while a local change to this event is waiting in the outbox. */
     val pendingSync: Boolean,
+    /** Google title starts with our "📝 " marker; [title] holds the text without it. */
+    @ColumnInfo(defaultValue = "0") val markerInTitle: Boolean = false,
+    /** Google description ends with our marker block; [description] holds the text without it. */
+    @ColumnInfo(defaultValue = "0") val markerInDescription: Boolean = false,
 ) {
     val isRecurring: Boolean get() = recurringEventId != null
 }
@@ -142,4 +147,43 @@ data class SyncStateEntity(
     @PrimaryKey val key: String,
     val value: String,
     val updatedAt: Long,
+)
+
+/**
+ * A calendar event (single occurrence or whole series) attached to a notebook: notes created
+ * for matching occurrences are placed in that notebook automatically.
+ */
+@Entity(tableName = "notebook_links", indices = [Index("notebookId")])
+data class NotebookLinkEntity(
+    @PrimaryKey val id: String,
+    val notebookId: String,
+    val accountId: String,
+    val calendarId: String,
+    /** Instance id for INSTANCE scope, series (master) id for SERIES scope. */
+    val eventId: String,
+    val recurringEventId: String?,
+    val scope: EventLinkScope,
+    val eventTitleSnapshot: String,
+    val createdAt: Long,
+    val deletedAt: Long?,
+)
+
+/** What this app last wrote to a Google event to mark it as having notes. */
+@Entity(tableName = "event_markers", primaryKeys = ["calendarId", "eventId"])
+data class EventMarkerEntity(
+    val calendarId: String,
+    /** Instance id, or series master id for series links. */
+    val eventId: String,
+    val titleApplied: Boolean,
+    val descriptionApplied: Boolean,
+    /** Encoded note ids written to the private extended property. */
+    val noteIds: String,
+    /** True if the event cannot be edited by the user; nothing was written. */
+    val skipped: Boolean,
+    val updatedAt: Long,
+)
+
+data class NotebookWithCount(
+    @Embedded val notebook: NotebookEntity,
+    val noteCount: Int,
 )

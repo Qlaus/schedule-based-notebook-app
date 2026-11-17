@@ -4,7 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.qlaus.calnotes.data.local.EventLinkEntity
+import io.github.qlaus.calnotes.data.local.NotebookEntity
 import io.github.qlaus.calnotes.data.repo.NoteRepository
+import io.github.qlaus.calnotes.data.repo.NotebookRepository
+import io.github.qlaus.calnotes.sync.SyncCoordinator
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import io.github.qlaus.calnotes.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -22,6 +27,7 @@ data class NoteEditorState(
     val title: String = "",
     val body: String = "",
     val links: List<EventLinkEntity> = emptyList(),
+    val notebookId: String? = null,
     val saved: Boolean = true,
 )
 
@@ -29,8 +35,13 @@ data class NoteEditorState(
 @HiltViewModel
 class NoteEditorViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
+    notebookRepository: NotebookRepository,
+    private val syncCoordinator: SyncCoordinator,
     @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel() {
+
+    val notebooks: StateFlow<List<NotebookEntity>> =
+        notebookRepository.activeNotebooks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _state = MutableStateFlow(NoteEditorState())
     val state: StateFlow<NoteEditorState> = _state.asStateFlow()
@@ -46,11 +57,17 @@ class NoteEditorViewModel @Inject constructor(
             _state.value = if (note == null) {
                 NoteEditorState(loaded = true, missing = true)
             } else {
-                NoteEditorState(loaded = true, title = note.note.title, body = note.note.body, links = note.links)
+                NoteEditorState(
+                    loaded = true,
+                    title = note.note.title,
+                    body = note.note.body,
+                    links = note.links,
+                    notebookId = note.note.notebookId,
+                )
             }
             // Keep link info (e.g. "event deleted") live without overwriting what the user types.
             noteRepository.observeNote(id).collect { latest ->
-                if (latest != null) _state.value = _state.value.copy(links = latest.links)
+                if (latest != null) _state.value = _state.value.copy(links = latest.links, notebookId = latest.note.notebookId)
             }
         }
     }
@@ -81,6 +98,12 @@ class NoteEditorViewModel @Inject constructor(
         saveJob?.cancel()
         _state.value = _state.value.copy(missing = true)
         noteRepository.delete(id)
+        syncCoordinator.pushChanges() // remove the calendar marker if this was the last note
+    }
+
+    fun moveToNotebook(notebookId: String?) {
+        val id = noteId ?: return
+        viewModelScope.launch { noteRepository.moveToNotebook(id, notebookId) }
     }
 
     override fun onCleared() {

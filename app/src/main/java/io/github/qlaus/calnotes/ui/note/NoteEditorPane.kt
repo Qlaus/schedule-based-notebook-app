@@ -1,6 +1,10 @@
 package io.github.qlaus.calnotes.ui.note
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +23,8 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +61,8 @@ fun NoteEditorPane(
     val state by vm.state.collectAsState()
     val scope = rememberCoroutineScope()
     var askDelete by remember { mutableStateOf(false) }
+    val notebooks by vm.notebooks.collectAsState()
+    var notebookMenu by remember { mutableStateOf(false) }
 
     PaneScaffold(
         canGoBack = canGoBack,
@@ -85,6 +93,29 @@ fun NoteEditorPane(
             Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 40.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                val current = notebooks.firstOrNull { it.id == state.notebookId }
+                Box {
+                    AssistChip(
+                        onClick = { notebookMenu = true },
+                        label = { Text(current?.title ?: stringResource(R.string.note_notebook_none)) },
+                        leadingIcon = {
+                            Box(Modifier.size(10.dp).clip(CircleShape).background(Formats.parseColor(current?.color, MaterialTheme.colorScheme.outline)))
+                        },
+                    )
+                    DropdownMenu(expanded = notebookMenu, onDismissRequest = { notebookMenu = false }) {
+                        notebooks.forEach { nb ->
+                            DropdownMenuItem(text = { Text(nb.title) }, onClick = { notebookMenu = false; vm.moveToNotebook(nb.id) })
+                        }
+                        if (current != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.note_remove_from_notebook)) },
+                                onClick = { notebookMenu = false; vm.moveToNotebook(null) },
+                            )
+                        }
+                    }
+                }
+            }
             if (state.links.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.links.forEach { link ->

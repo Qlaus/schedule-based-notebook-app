@@ -65,7 +65,9 @@ object AppModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.NAME).build()
+        Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.NAME)
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     @Singleton
@@ -101,4 +103,12 @@ object AppModule {
 abstract class BindingsModule {
     @Binds
     abstract fun currentAccount(impl: AuthManager): CurrentAccount
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class SettingsModule {
+    @Binds
+    abstract fun settingsSource(impl: io.github.qlaus.calnotes.data.settings.SettingsRepository):
+        io.github.qlaus.calnotes.data.settings.SettingsSource
 }

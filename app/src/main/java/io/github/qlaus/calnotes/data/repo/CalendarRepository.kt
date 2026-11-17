@@ -52,6 +52,8 @@ class CalendarRepository @Inject constructor(
 
     fun observeEvents(from: Long, to: Long): Flow<List<EventWithCalendar>> = eventDao.observeRange(from, to)
 
+    fun observeAllVisibleEvents(): Flow<List<EventWithCalendar>> = eventDao.observeAllVisible()
+
     fun observeEvent(calendarId: String, eventId: String): Flow<EventWithCalendar?> =
         eventDao.observe(calendarId, eventId)
 
@@ -165,15 +167,19 @@ class CalendarRepository @Inject constructor(
                 }
                 eventDao.upsertAll(members)
                 enqueue(TYPE_UPDATE, draft.calendarId, seriesId,
-                    EventMapping.toPayload(draft, zone, includeTimes = false, includeRecurrence = false))
+                    EventMapping.toPayload(draft, zone, includeTimes = false, includeRecurrence = false,
+                        markerInTitle = current.markerInTitle, markerInDescription = current.markerInDescription))
             } else {
                 eventDao.upsertAll(listOf(draft.toEntity(eventId, zone, current.recurringEventId).copy(
                     originalStartMillis = current.originalStartMillis,
                     colorId = current.colorId,
                     htmlLink = current.htmlLink,
+                    markerInTitle = current.markerInTitle,
+                    markerInDescription = current.markerInDescription,
                 )))
                 enqueue(TYPE_UPDATE, draft.calendarId, eventId,
-                    EventMapping.toPayload(draft, zone, includeTimes = true, includeRecurrence = false))
+                    EventMapping.toPayload(draft, zone, includeTimes = true, includeRecurrence = false,
+                        markerInTitle = current.markerInTitle, markerInDescription = current.markerInDescription))
             }
         }
     }
@@ -212,6 +218,7 @@ class CalendarRepository @Inject constructor(
                             linkDao.remapEventId(op.calendarId, op.eventId, created.id, now)
                             linkDao.remapSeriesId(op.calendarId, op.eventId, created.id, now)
                             opsDao.remapEventId(op.calendarId, op.eventId, created.id)
+                            db.notebookDao().remapEventId(op.calendarId, op.eventId, created.id)
                             if (created.recurrence.isNullOrEmpty()) {
                                 writable(op.calendarId)?.let { w ->
                                     EventMapping.toEntity(created, op.calendarId, w, zone)?.let { eventDao.upsertAll(listOf(it)) }
@@ -267,6 +274,7 @@ class CalendarRepository @Inject constructor(
         eventDao.clear()
         calendarDao.clear()
         opsDao.clear()
+        db.eventMarkerDao().clear()
     }
 
     private suspend fun writable(calendarId: String): Boolean? =

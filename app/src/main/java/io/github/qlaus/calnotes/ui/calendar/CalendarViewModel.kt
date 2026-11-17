@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
 import javax.inject.Inject
 
@@ -45,18 +44,6 @@ data class EventUi(
     val hasNotes: Boolean,
 ) {
     val key: String get() = event.calendarId + "/" + event.id
-}
-
-/** What the right-hand (or full-screen on narrow windows) pane shows. */
-sealed interface DetailTarget {
-    data class Event(val calendarId: String, val eventId: String) : DetailTarget
-    data class Note(val noteId: String) : DetailTarget
-    data class EditEvent(
-        val calendarId: String? = null,
-        val eventId: String? = null,
-        val presetDate: LocalDate? = null,
-        val presetTime: LocalTime? = null,
-    ) : DetailTarget
 }
 
 data class DateRange(val from: Long, val to: Long)
@@ -76,10 +63,6 @@ class CalendarViewModel @Inject constructor(
 
     private val _anchor = MutableStateFlow(LocalDate.now())
     val anchor: StateFlow<LocalDate> = _anchor.asStateFlow()
-
-    private val _detailStack = MutableStateFlow<List<DetailTarget>>(emptyList())
-    val detail: StateFlow<DetailTarget?> = _detailStack.map { it.lastOrNull() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
@@ -159,33 +142,6 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun dismissOutboxError() = calendarRepository.clearOutboxError()
-
-    // --- detail navigation ---
-
-    /** Opens a target as the new root of the detail pane (e.g. tapping an event in the calendar). */
-    fun show(target: DetailTarget) {
-        _detailStack.value = listOf(target)
-    }
-
-    /** Pushes a target on top of the current one (e.g. event detail → note). */
-    fun push(target: DetailTarget) {
-        _detailStack.value = _detailStack.value + target
-    }
-
-    /** Replaces the top entry (e.g. editor → the event it just created). */
-    fun replaceTop(target: DetailTarget) {
-        _detailStack.value = _detailStack.value.dropLast(1) + target
-    }
-
-    fun stackDepth(): Int = _detailStack.value.size
-
-    fun back() {
-        _detailStack.value = _detailStack.value.dropLast(1)
-    }
-
-    fun closeDetail() {
-        _detailStack.value = emptyList()
-    }
 
     private fun rangeFor(mode: CalendarMode, anchor: LocalDate): DateRange {
         val (start, endExclusive) = when (mode) {

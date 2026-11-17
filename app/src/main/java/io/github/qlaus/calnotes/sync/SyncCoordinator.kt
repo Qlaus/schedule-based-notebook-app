@@ -8,6 +8,7 @@ import kotlinx.coroutines.CancellationException
 import io.github.qlaus.calnotes.auth.AuthStatus
 import io.github.qlaus.calnotes.auth.NotSignedInException
 import io.github.qlaus.calnotes.data.repo.CalendarRepository
+import io.github.qlaus.calnotes.data.repo.MarkerSync
 import io.github.qlaus.calnotes.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,7 @@ sealed interface SyncStatus {
 @Singleton
 class SyncCoordinator @Inject constructor(
     private val calendarRepository: CalendarRepository,
+    private val markerSync: MarkerSync,
     private val auth: AuthManager,
     private val clock: Clock,
     @ApplicationScope private val scope: CoroutineScope,
@@ -79,16 +81,21 @@ class SyncCoordinator @Inject constructor(
         }
     }
 
-    /** Sends queued event changes right away (called after edits). */
+    /** Sends queued event changes and note markers right away (called after edits). */
     fun pushChanges() {
         scope.launch {
-            if (auth.status.value is AuthStatus.SignedIn) guarded { calendarRepository.flushOutbox() }
+            if (auth.status.value is AuthStatus.SignedIn) {
+                guarded {
+                    if (calendarRepository.flushOutbox()) markerSync.reconcile()
+                }
+            }
         }
     }
 
     private suspend fun syncWindow() {
         calendarRepository.flushOutbox()
         calendarRepository.refreshCalendars()
+        markerSync.reconcile()
         val now = clock.instant()
         calendarRepository.refreshRange(
             now.minus(WINDOW_BACK).toEpochMilli(),

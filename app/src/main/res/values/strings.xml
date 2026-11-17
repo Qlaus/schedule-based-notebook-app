@@ -102,6 +102,55 @@
     <string name="note_saved">Kaydedildi</string>
     <string name="note_series">Tüm seri</string>
 
+    <!-- Navigation -->
+    <string name="nav_calendar">Takvim</string>
+    <string name="nav_notebooks">Defterler</string>
+    <string name="nav_search">Arama</string>
+    <string name="nav_settings">Ayarlar</string>
+
+    <!-- Notebooks -->
+    <string name="notebooks_title">Defterler</string>
+    <string name="notebook_new">Yeni defter</string>
+    <string name="notebook_name">Defter adı</string>
+    <string name="notebook_create">Oluştur</string>
+    <string name="notebook_rename">Yeniden adlandır</string>
+    <string name="notebook_color">Renk</string>
+    <string name="notebook_delete">Defteri sil</string>
+    <string name="notebook_delete_body">Defter silinir. İçindeki notlar silinmez, "Defterde olmayan notlar" bölümüne taşınır.</string>
+    <string name="notebook_note_count">%1$d not</string>
+    <string name="notebook_empty">Bu defterde henüz not yok.</string>
+    <string name="notebooks_empty">Henüz defter yok. Ders veya proje başına bir defter oluşturabilirsiniz.</string>
+    <string name="unfiled_notes">Defterde olmayan notlar</string>
+    <string name="new_note">Yeni not</string>
+    <string name="link_notebook">Deftere bağla</string>
+    <string name="linked_notebook">Defter: %1$s</string>
+    <string name="linked_notebook_series">Defter: %1$s · tüm seri</string>
+    <string name="unlink_notebook">Bağlantıyı kaldır</string>
+    <string name="pick_notebook">Defter seçin</string>
+    <string name="scope_notebook_title">Ne bu deftere bağlansın?</string>
+    <string name="scope_notebook_series_hint">Tüm seri bağlanırsa, her ders için oluşturduğunuz not bu deftere otomatik eklenir.</string>
+    <string name="note_notebook_none">Defter yok</string>
+    <string name="note_move_to">Deftere taşı</string>
+    <string name="note_remove_from_notebook">Defterden çıkar</string>
+    <string name="standalone_note">Bağımsız not</string>
+
+    <!-- Search -->
+    <string name="search_hint">Not, etkinlik veya tarih ara (ör. fizik, 12 kasım, 2026-11)</string>
+    <string name="search_notes">Notlar</string>
+    <string name="search_events">Etkinlikler</string>
+    <string name="search_no_results">Sonuç bulunamadı.</string>
+    <string name="search_start">Aramak için yazmaya başlayın.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_calendar_section">Google Takvim</string>
+    <string name="settings_title_marker">Başlığa 📝 ekle</string>
+    <string name="settings_title_marker_hint">Notu olan etkinliklerin başlığının başına 📝 eklenir. Paylaşılan etkinliklerde diğer katılımcılar da görebilir.</string>
+    <string name="settings_description_marker">Açıklamaya not işareti ekle</string>
+    <string name="settings_description_marker_hint">Açıklamanın sonuna "📝 Notes attached" satırı eklenir. Mevcut açıklama metniniz değişmez.</string>
+    <string name="settings_account_section">Hesap</string>
+    <string name="settings_version">Sürüm %1$s</string>
+
     <!-- Crash report -->
     <string name="crash_title">Uygulama beklenmedik şekilde kapandı</string>
     <string name="crash_body">Aşağıdaki hata ayrıntısını kopyalayıp geliştiriciye gönderin. Ayrıntıda oturum bilgisi veya not içeriği yoktur.</string>

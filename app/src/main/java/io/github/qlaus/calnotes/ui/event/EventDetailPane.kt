@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Edit
@@ -31,6 +32,8 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +60,7 @@ import io.github.qlaus.calnotes.ui.common.Formats
 import io.github.qlaus.calnotes.ui.common.PaneScaffold
 import io.github.qlaus.calnotes.ui.common.ScopeChoiceDialog
 import io.github.qlaus.calnotes.ui.common.ThinDivider
+import io.github.qlaus.calnotes.ui.notebook.NotebookPickerDialog
 import io.github.qlaus.calnotes.ui.theme.Accent
 import kotlinx.coroutines.launch
 
@@ -78,6 +82,11 @@ fun EventDetailPane(
 
     var askNoteScope by remember { mutableStateOf(false) }
     var askDelete by remember { mutableStateOf(false) }
+    var pickNotebook by remember { mutableStateOf(false) }
+    // Chosen in the picker, waiting for the "this occurrence / whole series" answer.
+    var pendingNotebook by remember { mutableStateOf<Pair<String?, String?>?>(null) }
+    val notebookLink by vm.notebookLink.collectAsState()
+    val notebooks by vm.notebooks.collectAsState()
 
     val loaded = state as? EventDetailState.Loaded
     val event = loaded?.event?.event
@@ -130,6 +139,28 @@ fun EventDetailPane(
                     }
 
                     ThinDivider()
+                    val nl = notebookLink
+                    if (nl != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(12.dp).clip(CircleShape).background(Formats.parseColor(nl.notebook.color, Accent)))
+                            Spacer(Modifier.size(10.dp))
+                            Text(
+                                stringResource(
+                                    if (nl.link.scope == EventLinkScope.SERIES) R.string.linked_notebook_series else R.string.linked_notebook,
+                                    nl.notebook.title,
+                                ),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { scope.launch { vm.unlinkNotebook() } }) { Text(stringResource(R.string.unlink_notebook)) }
+                        }
+                    } else {
+                        OutlinedButton(onClick = { pickNotebook = true }, shape = MaterialTheme.shapes.large) {
+                            Icon(Icons.Outlined.Book, null)
+                            Spacer(Modifier.size(8.dp))
+                            Text(stringResource(R.string.link_notebook))
+                        }
+                    }
                     Text(stringResource(R.string.notes), style = MaterialTheme.typography.titleLarge)
                     if (notes.isEmpty()) {
                         Text(stringResource(R.string.no_notes_yet), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -173,6 +204,43 @@ fun EventDetailPane(
                 }
             }
         }
+    }
+
+    fun link(notebookId: String?, newTitle: String?, s: EventLinkScope) =
+        scope.launch { vm.linkToNotebook(notebookId, newTitle, s)?.let(onOpenNote) }
+
+    if (pickNotebook) {
+        NotebookPickerDialog(
+            notebooks = notebooks,
+            onPick = { id ->
+                pickNotebook = false
+                if (event?.isRecurring == true) {
+                    pendingNotebook = id to null
+                } else {
+                    link(id, null, EventLinkScope.INSTANCE)
+                }
+            },
+            onCreate = { title ->
+                pickNotebook = false
+                if (event?.isRecurring == true) {
+                    pendingNotebook = null to title
+                } else {
+                    link(null, title, EventLinkScope.INSTANCE)
+                }
+            },
+            onDismiss = { pickNotebook = false },
+        )
+    }
+    pendingNotebook?.let { (id, title) ->
+        ScopeChoiceDialog(
+            title = stringResource(R.string.scope_notebook_title),
+            instanceLabel = stringResource(R.string.scope_note_instance),
+            seriesLabel = stringResource(R.string.scope_note_series),
+            hint = stringResource(R.string.scope_notebook_series_hint),
+            onInstance = { pendingNotebook = null; link(id, title, EventLinkScope.INSTANCE) },
+            onSeries = { pendingNotebook = null; link(id, title, EventLinkScope.SERIES) },
+            onDismiss = { pendingNotebook = null },
+        )
     }
 
     if (askNoteScope) {

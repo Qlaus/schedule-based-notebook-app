@@ -4,12 +4,24 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -18,44 +30,103 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import io.github.qlaus.calnotes.R
 import io.github.qlaus.calnotes.ui.calendar.CalendarPane
 import io.github.qlaus.calnotes.ui.calendar.CalendarViewModel
-import io.github.qlaus.calnotes.ui.calendar.DetailTarget
 import io.github.qlaus.calnotes.ui.event.EventDetailPane
 import io.github.qlaus.calnotes.ui.event.EventEditorPane
+import io.github.qlaus.calnotes.ui.nav.DetailTarget
+import io.github.qlaus.calnotes.ui.nav.NavViewModel
+import io.github.qlaus.calnotes.ui.nav.Section
 import io.github.qlaus.calnotes.ui.note.NoteEditorPane
+import io.github.qlaus.calnotes.ui.notebook.NotebooksPane
+import io.github.qlaus.calnotes.ui.search.SearchPane
+import io.github.qlaus.calnotes.ui.settings.SettingsPane
 
 private val TwoPaneMinWidth = 700.dp
 
+private data class NavItem(val section: Section, val label: Int, val icon: ImageVector)
+
+private val NavItems = listOf(
+    NavItem(Section.CALENDAR, R.string.nav_calendar, Icons.Outlined.CalendarMonth),
+    NavItem(Section.NOTEBOOKS, R.string.nav_notebooks, Icons.Outlined.Book),
+    NavItem(Section.SEARCH, R.string.nav_search, Icons.Outlined.Search),
+    NavItem(Section.SETTINGS, R.string.nav_settings, Icons.Outlined.Settings),
+)
+
 /**
- * Adaptive layout: on wide windows (tablet) calendar on the left and the detail pane on the right;
- * on narrow windows the detail pane replaces the calendar.
+ * Adaptive layout. Wide windows (tablet): navigation rail | section pane | detail pane.
+ * Narrow windows: section pane with a bottom bar; the detail pane replaces it when open.
  */
 @Composable
-fun MainScreen(calendarViewModel: CalendarViewModel, accountEmail: String?, onSignOut: () -> Unit) {
-    val detail by calendarViewModel.detail.collectAsState()
-    BackHandler(enabled = detail != null) { calendarViewModel.back() }
+fun MainScreen(accountEmail: String?, onSignOut: () -> Unit) {
+    val nav: NavViewModel = hiltViewModel()
+    val calendarViewModel: CalendarViewModel = hiltViewModel()
+    val section by nav.section.collectAsState()
+    val stack by nav.stack.collectAsState()
+    val notebookSelection by nav.notebookSelection.collectAsState()
+    val detail = stack.lastOrNull()
+
+    BackHandler(enabled = stack.isNotEmpty() || section != Section.CALENDAR || notebookSelection != io.github.qlaus.calnotes.ui.nav.NotebookSelection.All) {
+        nav.handleBack()
+    }
+
+    val sectionPane: @Composable (Modifier) -> Unit = { modifier ->
+        when (section) {
+            Section.CALENDAR -> CalendarPane(calendarViewModel, onShow = nav::show, modifier = modifier)
+            Section.NOTEBOOKS -> NotebooksPane(
+                selection = notebookSelection,
+                onSelect = nav::selectNotebook,
+                onOpenNote = { nav.show(DetailTarget.Note(it)) },
+                modifier = modifier,
+            )
+            Section.SEARCH -> SearchPane(onShow = nav::show, modifier = modifier)
+            Section.SETTINGS -> SettingsPane(accountEmail, onSignOut, modifier)
+        }
+    }
 
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-            val twoPane = maxWidth >= TwoPaneMinWidth
-            if (twoPane) {
+            if (maxWidth >= TwoPaneMinWidth) {
                 Row(Modifier.fillMaxSize()) {
-                    CalendarPane(calendarViewModel, accountEmail, onSignOut, Modifier.weight(0.6f).fillMaxHeight())
+                    NavigationRail(containerColor = MaterialTheme.colorScheme.background) {
+                        Spacer(Modifier.padding(top = 8.dp))
+                        NavItems.forEach { item ->
+                            NavigationRailItem(
+                                selected = section == item.section,
+                                onClick = { nav.selectSection(item.section) },
+                                icon = { Icon(item.icon, null) },
+                                label = { Text(stringResource(item.label)) },
+                            )
+                        }
+                    }
                     VerticalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                    Box(Modifier.weight(0.4f).fillMaxHeight().background(MaterialTheme.colorScheme.surface)) {
-                        DetailPane(detail, calendarViewModel, closeIsBack = false)
+                    sectionPane(Modifier.weight(0.58f).fillMaxHeight())
+                    VerticalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                    Box(Modifier.weight(0.42f).fillMaxHeight().background(MaterialTheme.colorScheme.surface)) {
+                        DetailPane(detail, stack.size, nav, closeIsBack = false)
                     }
                 }
+            } else if (detail != null) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+                    DetailPane(detail, stack.size, nav, closeIsBack = true)
+                }
             } else {
-                if (detail == null) {
-                    CalendarPane(calendarViewModel, accountEmail, onSignOut, Modifier.fillMaxSize())
-                } else {
-                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-                        DetailPane(detail, calendarViewModel, closeIsBack = true)
+                Column(Modifier.fillMaxSize()) {
+                    sectionPane(Modifier.weight(1f))
+                    NavigationBar {
+                        NavItems.forEach { item ->
+                            NavigationBarItem(
+                                selected = section == item.section,
+                                onClick = { nav.selectSection(item.section) },
+                                icon = { Icon(item.icon, null) },
+                                label = { Text(stringResource(item.label)) },
+                            )
+                        }
                     }
                 }
             }
@@ -64,8 +135,8 @@ fun MainScreen(calendarViewModel: CalendarViewModel, accountEmail: String?, onSi
 }
 
 @Composable
-private fun DetailPane(target: DetailTarget?, vm: CalendarViewModel, closeIsBack: Boolean) {
-    val stackDepthGreaterThanOne = vm.stackDepth() > 1
+private fun DetailPane(target: DetailTarget?, depth: Int, nav: NavViewModel, closeIsBack: Boolean) {
+    val canGoBack = depth > 1 || closeIsBack
     when (target) {
         null -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
             Text(
@@ -77,28 +148,28 @@ private fun DetailPane(target: DetailTarget?, vm: CalendarViewModel, closeIsBack
         is DetailTarget.Event -> EventDetailPane(
             calendarId = target.calendarId,
             eventId = target.eventId,
-            canGoBack = stackDepthGreaterThanOne || closeIsBack,
-            onBack = vm::back,
-            onEdit = { vm.push(DetailTarget.EditEvent(target.calendarId, target.eventId)) },
-            onOpenNote = { vm.push(DetailTarget.Note(it)) },
-            onDeleted = vm::back,
+            canGoBack = canGoBack,
+            onBack = nav::back,
+            onEdit = { nav.push(DetailTarget.EditEvent(target.calendarId, target.eventId)) },
+            onOpenNote = { nav.push(DetailTarget.Note(it)) },
+            onDeleted = nav::back,
         )
         is DetailTarget.Note -> NoteEditorPane(
             noteId = target.noteId,
-            canGoBack = stackDepthGreaterThanOne || closeIsBack,
-            onBack = vm::back,
-            onOpenEvent = { c, e -> vm.push(DetailTarget.Event(c, e)) },
-            onDeleted = vm::back,
+            canGoBack = canGoBack,
+            onBack = nav::back,
+            onOpenEvent = { c, e -> nav.push(DetailTarget.Event(c, e)) },
+            onDeleted = nav::back,
         )
         is DetailTarget.EditEvent -> EventEditorPane(
             calendarId = target.calendarId,
             eventId = target.eventId,
             presetDate = target.presetDate,
             presetTime = target.presetTime,
-            canGoBack = stackDepthGreaterThanOne || closeIsBack,
-            onBack = vm::back,
+            canGoBack = canGoBack,
+            onBack = nav::back,
             // New events get their Google id only after upload, so return to the previous view.
-            onSaved = { _, _ -> vm.back() },
+            onSaved = { _, _ -> nav.back() },
         )
     }
 }
