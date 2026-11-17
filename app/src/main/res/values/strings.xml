@@ -153,13 +153,13 @@
 
     <!-- Drive sync -->
     <string name="drive_section">Bulut eşitleme (Google Drive)</string>
-    <string name="drive_hint">Notlar ve defterler Google Drive'ınızdaki gizli uygulama alanında saklanır. Drive'daki diğer dosyalarınızı göremez.</string>
+    <string name="drive_hint">Notlar ve defterler Google Drive\'ınızdaki gizli uygulama alanında saklanır. Drive\'daki diğer dosyalarınızı göremez.</string>
     <string name="drive_sync_now">Şimdi eşitle</string>
     <string name="drive_idle">Henüz eşitlenmedi</string>
     <string name="drive_running">Notlar eşitleniyor…</string>
     <string name="drive_synced">Notlar eşitlendi · %1$s</string>
     <string name="drive_offline">Çevrimdışı – notlar cihazda, bağlantı gelince gönderilecek</string>
-    <string name="drive_no_permission">Drive izni yok. Çıkış yapıp tekrar girin ve Google'ın izin ekranında Drive kutusunu işaretli bırakın.</string>
+    <string name="drive_no_permission">Drive izni yok. Çıkış yapıp tekrar girin ve Google\'ın izin ekranında Drive kutusunu işaretli bırakın.</string>
     <string name="drive_failed">Notlar eşitlenemedi (%1$s)</string>
     <string name="drive_pending">%1$d not değişikliği gönderilmeyi bekliyor</string>
     <string name="note_cloud_pending">Buluta gönderilecek</string>
