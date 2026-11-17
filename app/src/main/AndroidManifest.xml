@@ -37,9 +37,12 @@
         </activity>
 
         <!-- Second OAuth redirect scheme (package name); the first comes from appAuthRedirectScheme. -->
+        <!-- AppAuth's activities are AppCompatActivity and need an AppCompat theme (crashed without it). -->
         <activity
             android:name="net.openid.appauth.RedirectUriReceiverActivity"
             android:exported="true"
+            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar"
+            tools:replace="android:theme"
             tools:node="merge">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -48,6 +51,12 @@
                 <data android:scheme="io.github.qlaus.calnotes" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="net.openid.appauth.AuthorizationManagementActivity"
+            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar"
+            tools:replace="android:theme"
+            tools:node="merge" />
 
         <!-- WorkManager is initialized on demand with the Hilt worker factory. -->
         <provider
