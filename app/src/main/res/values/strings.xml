@@ -101,4 +101,11 @@
     <string name="note_delete_body">Bu not kalıcı olarak silinir.</string>
     <string name="note_saved">Kaydedildi</string>
     <string name="note_series">Tüm seri</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">Uygulama beklenmedik şekilde kapandı</string>
+    <string name="crash_body">Aşağıdaki hata ayrıntısını kopyalayıp geliştiriciye gönderin. Ayrıntıda oturum bilgisi veya not içeriği yoktur.</string>
+    <string name="crash_copy">Kopyala</string>
+    <string name="crash_share">Paylaş</string>
+    <string name="crash_continue">Devam et</string>
 </resources>

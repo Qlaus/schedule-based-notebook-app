@@ -8,6 +8,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import io.github.qlaus.calnotes.diagnostics.CrashReporter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -18,6 +23,15 @@ import io.github.qlaus.calnotes.ui.calendar.CalendarViewModel
 
 @Composable
 fun AppRoot() {
+    val context = LocalContext.current
+    var crash by remember { mutableStateOf(CrashReporter.readLastCrash(context)) }
+    crash?.let { report ->
+        CrashReportScreen(report) {
+            CrashReporter.clearLastCrash(context)
+            crash = null
+        }
+        return
+    }
     val authViewModel: AuthViewModel = hiltViewModel()
     val status by authViewModel.status.collectAsState()
     when (val s = status) {

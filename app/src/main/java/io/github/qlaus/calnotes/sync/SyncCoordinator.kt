@@ -1,6 +1,10 @@
 package io.github.qlaus.calnotes.sync
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.qlaus.calnotes.auth.AuthManager
+import io.github.qlaus.calnotes.diagnostics.CrashReporter
+import kotlinx.coroutines.CancellationException
 import io.github.qlaus.calnotes.auth.AuthStatus
 import io.github.qlaus.calnotes.auth.NotSignedInException
 import io.github.qlaus.calnotes.data.repo.CalendarRepository
@@ -41,6 +45,7 @@ class SyncCoordinator @Inject constructor(
     private val auth: AuthManager,
     private val clock: Clock,
     @ApplicationScope private val scope: CoroutineScope,
+    @ApplicationContext private val context: Context,
 ) {
     private val mutex = Mutex()
     private val _status = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
@@ -105,6 +110,13 @@ class SyncCoordinator @Inject constructor(
             false
         } catch (e: IOException) {
             _status.value = SyncStatus.Offline
+            false
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Unexpected (e.g. parsing) errors must not crash the app; keep the trace for diagnosis.
+            CrashReporter.recordNonFatal(context, e)
+            _status.value = SyncStatus.Failed(e.javaClass.simpleName + (e.message?.let { ": " + it.take(80) } ?: ""))
             false
         }
     }

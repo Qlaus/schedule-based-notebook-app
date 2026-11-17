@@ -15,6 +15,8 @@ import io.github.qlaus.calnotes.data.local.AppDatabase
 import io.github.qlaus.calnotes.data.remote.AuthInterceptor
 import io.github.qlaus.calnotes.data.remote.calendar.CalendarApi
 import io.github.qlaus.calnotes.data.repo.ZoneProvider
+import io.github.qlaus.calnotes.diagnostics.CrashReporter
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -41,7 +43,11 @@ object AppModule {
     @Provides
     @Singleton
     @ApplicationScope
-    fun applicationScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    fun applicationScope(@ApplicationContext context: Context): CoroutineScope =
+        CoroutineScope(
+            SupervisorJob() + Dispatchers.Default +
+                CoroutineExceptionHandler { _, e -> CrashReporter.recordNonFatal(context, e) },
+        )
 
     @Provides
     fun clock(): Clock = Clock.systemUTC()

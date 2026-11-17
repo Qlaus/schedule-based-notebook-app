@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import io.github.qlaus.calnotes.diagnostics.CrashReporter
 import io.github.qlaus.calnotes.sync.SyncCoordinator
 import io.github.qlaus.calnotes.sync.SyncWorker
 import javax.inject.Inject
@@ -21,6 +22,7 @@ class CalNotesApp : Application(), Configuration.Provider {
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
 
     override fun onCreate() {
+        CrashReporter.install(this)
         super.onCreate()
         // App start and every return to the foreground trigger a sync.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
