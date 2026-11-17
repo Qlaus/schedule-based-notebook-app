@@ -1,8 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Not Takvimi</string>
-    <string name="setup_title">Kurulum tamam</string>
-    <string name="setup_body">Uygulama iskeleti çalışıyor. Bir sonraki adımda Google ile giriş ve takvim gelecek.</string>
-    <string name="setup_client_missing">Google OAuth istemci kimliği henüz ayarlanmadı.</string>
-    <string name="setup_client_ok">Google OAuth istemci kimliği ayarlı.</string>
+
+    <!-- Sign-in -->
+    <string name="signin_title">Not Takvimi</string>
+    <string name="signin_subtitle">Takviminizdeki her etkinliğe not ekleyin. Notlar cihazınızda ve kendi Google hesabınızda saklanır.</string>
+    <string name="signin_button">Google ile giriş yap</string>
+    <string name="signin_in_progress">Giriş yapılıyor…</string>
+    <string name="signin_reauth">Oturumunuzun süresi doldu. Notlarınız cihazda duruyor; devam etmek için tekrar giriş yapın.</string>
+    <string name="signin_failed">Giriş tamamlanamadı: %1$s</string>
+    <string name="signin_cancelled">Giriş iptal edildi.</string>
+    <string name="signin_client_missing">Google OAuth istemci kimliği ayarlı değil.</string>
+    <string name="signin_advanced">Gelişmiş</string>
+    <string name="signin_redirect_label">Yönlendirme adresi</string>
+    <string name="signin_redirect_hint">Google \"redirect_uri\" hatası verirse diğer seçeneği deneyin.</string>
+    <string name="signin_redirect_package">Paket adı</string>
+    <string name="signin_redirect_reverse">İstemci kimliği</string>
+
+    <!-- Calendar -->
+    <string name="mode_day">Gün</string>
+    <string name="mode_week">Hafta</string>
+    <string name="mode_month">Ay</string>
+    <string name="mode_agenda">Ajanda</string>
+    <string name="today">Bugün</string>
+    <string name="previous">Önceki</string>
+    <string name="next">Sonraki</string>
+    <string name="refresh">Yenile</string>
+    <string name="new_event">Yeni etkinlik</string>
+    <string name="calendars">Takvimler</string>
+    <string name="account">Hesap</string>
+    <string name="sign_out">Çıkış yap</string>
+    <string name="all_day">Tüm gün</string>
+    <string name="more_events">+%1$d daha</string>
+    <string name="no_title">(Başlıksız)</string>
+    <string name="agenda_empty">Bu dönemde etkinlik yok.</string>
+    <string name="has_notes">Not var</string>
+    <string name="pending_sync">Gönderilmeyi bekliyor</string>
+
+    <!-- Sync status -->
+    <string name="sync_running">Eşitleniyor…</string>
+    <string name="sync_done">Güncel</string>
+    <string name="sync_offline">Çevrimdışı – değişiklikler bekliyor</string>
+    <string name="sync_auth">Oturum gerekli</string>
+    <string name="sync_failed">Eşitleme hatası (%1$s)</string>
+    <string name="sync_pending">%1$d değişiklik bekliyor</string>
+    <string name="outbox_rejected">Google bir değişikliği reddetti (%1$s). Takvimdeki güncel hali gösteriliyor.</string>
+
+    <!-- Detail -->
+    <string name="select_event_hint">Ayrıntıları görmek için bir etkinlik seçin.</string>
+    <string name="event_edit">Düzenle</string>
+    <string name="event_delete">Sil</string>
+    <string name="event_recurring">Tekrarlayan etkinlik</string>
+    <string name="event_read_only">Bu etkinliği düzenleme izniniz yok.</string>
+    <string name="event_not_found">Etkinlik bulunamadı.</string>
+    <string name="notes">Notlar</string>
+    <string name="create_note">Not oluştur</string>
+    <string name="add_another_note">Başka not ekle</string>
+    <string name="no_notes_yet">Bu etkinlik için henüz not yok.</string>
+    <string name="close">Kapat</string>
+    <string name="back">Geri</string>
+    <string name="cancel">İptal</string>
+    <string name="save">Kaydet</string>
+    <string name="delete">Sil</string>
+
+    <!-- Recurring choices -->
+    <string name="scope_note_title">Not nereye bağlansın?</string>
+    <string name="scope_note_instance">Yalnızca bu etkinlik</string>
+    <string name="scope_note_series">Serinin tamamı</string>
+    <string name="scope_edit_title">Hangi etkinlikler değişsin?</string>
+    <string name="scope_edit_series_hint">Serinin tamamında yalnızca başlık, konum ve açıklama değişir.</string>
+    <string name="scope_delete_title">Hangi etkinlikler silinsin?</string>
+    <string name="delete_event_title">Etkinlik silinsin mi?</string>
+    <string name="delete_event_body">Etkinlik Google Takvim\'den silinir. Bağlı notlar silinmez.</string>
+
+    <!-- Editor -->
+    <string name="editor_new_title">Yeni etkinlik</string>
+    <string name="editor_edit_title">Etkinliği düzenle</string>
+    <string name="field_title">Başlık</string>
+    <string name="field_location">Konum</string>
+    <string name="field_description">Açıklama</string>
+    <string name="field_calendar">Takvim</string>
+    <string name="field_starts">Başlangıç</string>
+    <string name="field_ends">Bitiş</string>
+    <string name="field_repeat">Tekrar</string>
+    <string name="repeat_none">Tekrarlanmaz</string>
+    <string name="repeat_daily">Her gün</string>
+    <string name="repeat_weekly">Her hafta</string>
+    <string name="repeat_monthly">Her ay</string>
+    <string name="repeat_yearly">Her yıl</string>
+    <string name="repeat_edit_hint">Tekrar kuralı Google Takvim\'den değiştirilebilir.</string>
+    <string name="error_end_before_start">Bitiş, başlangıçtan önce olamaz.</string>
+    <string name="error_no_calendar">Yazılabilir bir takvim bulunamadı.</string>
+    <string name="ok">Tamam</string>
+
+    <!-- Note editor -->
+    <string name="note_title_hint">Başlık</string>
+    <string name="note_body_hint">Yazmaya başlayın…</string>
+    <string name="note_event_deleted">Etkinlik silindi</string>
+    <string name="note_delete_title">Not silinsin mi?</string>
+    <string name="note_delete_body">Bu not kalıcı olarak silinir.</string>
+    <string name="note_saved">Kaydedildi</string>
+    <string name="note_series">Tüm seri</string>
 </resources>

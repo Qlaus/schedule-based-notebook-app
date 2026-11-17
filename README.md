@@ -9,7 +9,7 @@ notebook. Notes are stored offline-first and synced to the user's Google Drive `
 | Phase | Scope | State |
 |---|---|---|
 | 0 | Project skeleton, theme, CI-built APK, Google Cloud setup | ✅ done |
-| 1 | Google sign-in, calendar views, event CRUD, local plain-text notes, two-pane | ⏳ next |
+| 1 | Google sign-in, calendar views, event CRUD, local plain-text notes, two-pane | 🧪 in device test |
 | 2 | Notebooks, search, calendar title marker | — |
 | 3 | Drive `appDataFolder` sync | — |
 | 4 | Local reminders, Markdown/PDF export | — |

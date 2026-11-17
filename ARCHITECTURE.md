@@ -67,6 +67,21 @@ Scopes: `openid email`, `calendar.events`, `calendar.calendarlist.readonly`, `dr
 Tokens and personal data are never logged. HTTP logging exists only in debug builds and redacts
 `Authorization`.
 
+## Calendar cache and outbox (Phase 1)
+
+- `events.list` with `singleEvents=true` per visible calendar and date range; the cached range is
+  replaced (stale rows removed) on every refresh. Sync window: 92 days back, 366 days ahead, plus the
+  range currently on screen.
+- Every event write goes through `pending_event_ops` (outbox) and is applied to the cache
+  optimistically; `flushOutbox()` sends ops in order. New events use a temporary `local…` id that is
+  remapped (event row, note links, later ops) when Google returns the real id.
+- Network/5xx errors keep the op for the next sync; 4xx rejections drop it (server state wins) and
+  surface a message.
+- PATCH payloads send explicit `null` for the unused of `date`/`dateTime`, so an event can switch
+  between all-day and timed. "Whole series" edits change text fields only (on the series master).
+- Linked events missing after a refresh are re-checked with `events.get`; 404/410/cancelled marks the
+  link `eventDeleted` and the note stays.
+
 ## Sync triggers
 
 App start, app foreground (`ProcessLifecycleOwner`), pull-to-refresh, and periodic WorkManager

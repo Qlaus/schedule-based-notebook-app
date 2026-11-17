@@ -21,8 +21,10 @@ android {
         versionName = "0.1.0"
 
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"$googleClientId\"")
-        // Redirect scheme for AppAuth's RedirectUriReceiverActivity (package name, reverse-DNS).
-        manifestPlaceholders["appAuthRedirectScheme"] = "io.github.qlaus.calnotes"
+        // AppAuth's RedirectUriReceiverActivity listens on the reverse client-id scheme;
+        // the package-name scheme is added as a second intent filter in AndroidManifest.xml.
+        manifestPlaceholders["appAuthRedirectScheme"] =
+            "com.googleusercontent.apps." + googleClientId.removeSuffix(".apps.googleusercontent.com")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -83,9 +85,6 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
-    implementation(libs.compose.adaptive)
-    implementation(libs.compose.adaptive.layout)
-    implementation(libs.compose.adaptive.navigation)
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.hilt.android)
