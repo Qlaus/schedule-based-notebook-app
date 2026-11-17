@@ -91,10 +91,11 @@ private class FakeDrive : Dispatcher() {
     private fun parts(request: RecordedRequest): Pair<kotlinx.serialization.json.JsonObject, String> {
         val boundary = request.getHeader("Content-Type")!!.substringAfter("boundary=")
         val body = request.body.readUtf8()
-        val sections = body.split("--$boundary").map { it.trim('\r', '\n') }.filter { it.isNotEmpty() && it != "--" }
-        fun payload(section: String) = section.substringAfter("\r\n\r\n")
+        // Each part: "\r\n<headers>\r\n\r\n<payload>\r\n"; keep empty payloads intact.
+        val sections = body.split("--$boundary").drop(1).filter { !it.startsWith("--") }
+        fun payload(section: String) = section.removePrefix("\r\n").substringAfter("\r\n\r\n").removeSuffix("\r\n")
         val meta = json.parseToJsonElement(payload(sections[0])) as kotlinx.serialization.json.JsonObject
-        return meta to payload(sections[1]).removeSuffix("\r\n")
+        return meta to payload(sections[1])
     }
 }
 
