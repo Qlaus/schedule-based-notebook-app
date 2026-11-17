@@ -37,6 +37,10 @@
 - Event detail: link occurrence/series to a notebook; note editor: move between notebooks.
 - Search over notes and cached events by title, notebook, event name and date spellings.
 - Calendar markers via `MarkerSync` (title prefix on by default, description block optional).
-## Phase 3 — Drive `appDataFolder` sync (LWW + backups, tombstones, status indicator)
+## Phase 3 — Drive `appDataFolder` sync 🧪
+- Flat file layout with appProperties for change detection; Markdown body + JSON metadata (format v1).
+- Last-writer-wins with conflict backups (restorable), tombstones, compare-and-set uploads.
+- Status in header / note editor / settings ("Şimdi eşitle"); push 4 s after edits.
+- Second-device test: reinstall (clear data) or another Android device, same Google account.
 ## Phase 4 — Local reminders, Markdown/PDF export
 ## Phase 5 — Stylus ink (androidx.ink) and rich text; revisit note/sync format

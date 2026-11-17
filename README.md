@@ -11,7 +11,7 @@ notebook. Notes are stored offline-first and synced to the user's Google Drive `
 | 0 | Project skeleton, theme, CI-built APK, Google Cloud setup | ✅ done |
 | 1 | Google sign-in, calendar views, event CRUD, local plain-text notes, two-pane | ✅ done (verified on MatePad) |
 | 2 | Notebooks, search, calendar title marker | 🧪 in device test |
-| 3 | Drive `appDataFolder` sync | — |
+| 3 | Drive `appDataFolder` sync | 🧪 in device test |
 | 4 | Local reminders, Markdown/PDF export | — |
 | 5 | Stylus ink (androidx.ink) and rich text | — |
 

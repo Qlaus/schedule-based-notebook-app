@@ -8,7 +8,14 @@ import kotlinx.coroutines.CancellationException
 import io.github.qlaus.calnotes.auth.AuthStatus
 import io.github.qlaus.calnotes.auth.NotSignedInException
 import io.github.qlaus.calnotes.data.repo.CalendarRepository
+import io.github.qlaus.calnotes.data.local.AppDatabase
+import io.github.qlaus.calnotes.data.repo.DriveSync
 import io.github.qlaus.calnotes.data.repo.MarkerSync
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.filter
 import io.github.qlaus.calnotes.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,14 +43,28 @@ sealed interface SyncStatus {
     data class Failed(val message: String) : SyncStatus
 }
 
+/** State of the Google Drive notes sync, shown in the header, note editor and settings. */
+sealed interface DriveStatus {
+    data object Idle : DriveStatus
+    data object Running : DriveStatus
+    data class Synced(val atMillis: Long) : DriveStatus
+    data object Offline : DriveStatus
+    /** Drive refused access, e.g. the Drive permission was unticked on Google's consent screen. */
+    data object NoPermission : DriveStatus
+    data class Failed(val message: String) : DriveStatus
+}
+
 /**
- * Runs calendar sync. Triggered on app start/foreground, on sign-in, on pull-to-refresh and
+ * Runs calendar and notes sync. Triggered on app start/foreground, on sign-in, on pull-to-refresh and
  * by a periodic WorkManager job (best-effort on Huawei, which may kill background work).
  */
+@OptIn(FlowPreview::class)
 @Singleton
 class SyncCoordinator @Inject constructor(
     private val calendarRepository: CalendarRepository,
     private val markerSync: MarkerSync,
+    private val driveSync: DriveSync,
+    db: AppDatabase,
     private val auth: AuthManager,
     private val clock: Clock,
     @ApplicationScope private val scope: CoroutineScope,
@@ -53,12 +74,57 @@ class SyncCoordinator @Inject constructor(
     private val _status = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
     val status: StateFlow<SyncStatus> = _status.asStateFlow()
 
+    private val driveMutex = Mutex()
+    private val _driveStatus = MutableStateFlow<DriveStatus>(DriveStatus.Idle)
+    val driveStatus: StateFlow<DriveStatus> = _driveStatus.asStateFlow()
+
+    /** Notes + notebooks with changes not yet in the cloud. */
+    val pendingNoteChanges: Flow<Int> =
+        combine(db.noteDao().observeDirtyCount(), db.notebookDao().observeDirtyCount()) { a, b -> a + b }
+
     init {
         // Sync right after a successful sign-in.
         scope.launch {
             auth.status.filterIsInstance<AuthStatus.SignedIn>().map { it.accountId }.distinctUntilChanged()
                 .collect { requestSync() }
         }
+        // Push note edits a few seconds after typing stops.
+        scope.launch {
+            pendingNoteChanges.debounce(NOTE_PUSH_DELAY_MS).filter { it > 0 }.collect { syncNotes() }
+        }
+    }
+
+    /** Two-way notes sync with Google Drive. Safe to call often; concurrent calls are skipped. */
+    suspend fun syncNotes(): Boolean {
+        if (auth.status.value !is AuthStatus.SignedIn) return false
+        if (driveMutex.isLocked) return true
+        return driveMutex.withLock {
+            _driveStatus.value = DriveStatus.Running
+            try {
+                driveSync.sync()
+                _driveStatus.value = DriveStatus.Synced(clock.millis())
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: NotSignedInException) {
+                _driveStatus.value = DriveStatus.Failed("auth")
+                false
+            } catch (e: HttpException) {
+                _driveStatus.value = if (e.code() == 403 || e.code() == 401) DriveStatus.NoPermission else DriveStatus.Failed("HTTP ${e.code()}")
+                false
+            } catch (e: IOException) {
+                _driveStatus.value = DriveStatus.Offline
+                false
+            } catch (e: Exception) {
+                CrashReporter.recordNonFatal(context, e)
+                _driveStatus.value = DriveStatus.Failed(e.javaClass.simpleName)
+                false
+            }
+        }
+    }
+
+    fun requestNotesSync() {
+        scope.launch { syncNotes() }
     }
 
     fun requestSync() {
@@ -69,7 +135,11 @@ class SyncCoordinator @Inject constructor(
     suspend fun syncNow(): Boolean {
         if (auth.status.value !is AuthStatus.SignedIn) return false
         if (mutex.isLocked) return true
-        return mutex.withLock { guarded { syncWindow() } }
+        val calendarOk = mutex.withLock { guarded { syncWindow() } }
+        val notesOk = syncNotes()
+        // Notes downloaded from another device may need calendar markers.
+        if (notesOk) guarded { markerSync.reconcile() }
+        return calendarOk && notesOk
     }
 
     /** Refreshes just [from, to) (e.g. the range the user is looking at). */
@@ -129,6 +199,7 @@ class SyncCoordinator @Inject constructor(
     }
 
     private companion object {
+        const val NOTE_PUSH_DELAY_MS = 4_000L
         val WINDOW_BACK: Duration = Duration.ofDays(92)
         val WINDOW_AHEAD: Duration = Duration.ofDays(366)
     }

@@ -44,7 +44,7 @@ class MigrationTest {
     )
 
     @Test
-    fun migrates1To2AndKeepsNotes() = runBlocking {
+    fun migratesV1ToLatestAndKeepsNotes() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val name = "migration-test.db"
         context.deleteDatabase(name)
@@ -58,6 +58,7 @@ class MigrationTest {
             db.execSQL(
                 "INSERT INTO event_links VALUES ('l1','n1','acc','cal','ev1',NULL,10,'INSTANCE','Fizik',10,0,1,1,NULL)",
             )
+            db.execSQL("INSERT INTO notebooks VALUES ('nb1','acc','Fizik','#3B6FE0',1,1,NULL,1,1,NULL)")
             db.execSQL(
                 "INSERT INTO events VALUES ('cal','ev1',NULL,NULL,'Fizik','','',10,20,0,'UTC',NULL,'confirmed',1,NULL,NULL,0)",
             )
@@ -65,7 +66,7 @@ class MigrationTest {
         }
 
         val room = Room.databaseBuilder(context, AppDatabase::class.java, name)
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
             .allowMainThreadQueries()
             .build()
         try {
@@ -78,6 +79,9 @@ class MigrationTest {
             assertFalse(event.markerInTitle)
             assertEquals(emptyList(), room.notebookDao().activeLinks())
             assertEquals(emptyList(), room.eventMarkerDao().all())
+            val notebook = room.notebookDao().get("nb1")
+            assertNotNull(notebook)
+            assertEquals(null, notebook.remoteVersion)
         } finally {
             room.close()
         }

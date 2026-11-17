@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,6 +64,7 @@ fun NoteEditorPane(
     var askDelete by remember { mutableStateOf(false) }
     val notebooks by vm.notebooks.collectAsState()
     var notebookMenu by remember { mutableStateOf(false) }
+    var showBackups by remember { mutableStateOf(false) }
 
     PaneScaffold(
         canGoBack = canGoBack,
@@ -70,7 +72,11 @@ fun NoteEditorPane(
         actions = {
             if (state.loaded && !state.missing) {
                 Text(
-                    if (state.saved) stringResource(R.string.note_saved) else "…",
+                    when {
+                        !state.saved -> "…"
+                        state.cloudPending -> stringResource(R.string.note_cloud_pending)
+                        else -> stringResource(R.string.note_cloud_synced)
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(end = 8.dp),
@@ -114,6 +120,11 @@ fun NoteEditorPane(
                             )
                         }
                     }
+                }
+            }
+            if (state.backups.isNotEmpty()) {
+                TextButton(onClick = { showBackups = true }) {
+                    Text(stringResource(R.string.backups_button, state.backups.size), color = MaterialTheme.colorScheme.error)
                 }
             }
             if (state.links.isNotEmpty()) {
@@ -184,6 +195,15 @@ fun NoteEditorPane(
         }
     }
 
+    if (showBackups) {
+        BackupsDialog(
+            backups = state.backups,
+            onRestore = { showBackups = false; vm.restore(it) },
+            onDelete = { vm.deleteBackup(it.id) },
+            onDismiss = { showBackups = false },
+        )
+    }
+
     if (askDelete) {
         ConfirmDialog(
             title = stringResource(R.string.note_delete_title),
@@ -199,4 +219,44 @@ fun NoteEditorPane(
             onDismiss = { askDelete = false },
         )
     }
+}
+
+@Composable
+private fun BackupsDialog(
+    backups: List<io.github.qlaus.calnotes.data.local.NoteBackupEntity>,
+    onRestore: (io.github.qlaus.calnotes.data.local.NoteBackupEntity) -> Unit,
+    onDelete: (io.github.qlaus.calnotes.data.local.NoteBackupEntity) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.backups_title)) },
+        text = {
+            Column(
+                Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(stringResource(R.string.backups_hint), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                backups.forEach { b ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            stringResource(if (b.reason == "conflict-remote") R.string.backup_from_other_device else R.string.backup_from_this_device) +
+                                " · " + Formats.dayShort(Formats.date(b.createdAt)) + " " + Formats.time(b.createdAt),
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                        Text(b.title, style = MaterialTheme.typography.titleSmall)
+                        Text(b.body.take(300), style = MaterialTheme.typography.bodySmall, maxLines = 6)
+                        Row {
+                            TextButton(onClick = { onRestore(b) }) { Text(stringResource(R.string.backup_restore)) }
+                            TextButton(onClick = { onDelete(b) }) {
+                                Text(stringResource(R.string.backup_delete), color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
 }

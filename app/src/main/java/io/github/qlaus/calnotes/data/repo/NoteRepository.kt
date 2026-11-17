@@ -9,6 +9,7 @@ import io.github.qlaus.calnotes.core.model.LinkKey
 import io.github.qlaus.calnotes.data.local.AppDatabase
 import io.github.qlaus.calnotes.data.local.EventEntity
 import io.github.qlaus.calnotes.data.local.EventLinkEntity
+import io.github.qlaus.calnotes.data.local.NoteBackupEntity
 import io.github.qlaus.calnotes.data.local.NoteEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -140,6 +141,28 @@ class NoteRepository @Inject constructor(
             current.copy(title = title, body = body, updatedAt = clock.millis(), version = current.version + 1, dirty = true),
         )
     }
+
+    fun observeBackups(noteId: String) = db.noteBackupDao().observeForNote(noteId)
+
+    /** Restores a backup's text; the current text is kept as a backup in turn, so nothing is lost. */
+    suspend fun restoreBackup(backup: NoteBackupEntity) {
+        val current = noteDao.get(backup.noteId) ?: return
+        val now = clock.millis()
+        db.withTransaction {
+            db.noteBackupDao().insert(
+                backup.copy(
+                    id = UUID.randomUUID().toString(), version = current.version, title = current.title,
+                    body = current.body, metaJson = "{}", reason = "before-restore", createdAt = now,
+                ),
+            )
+            noteDao.upsert(
+                current.copy(title = backup.title, body = backup.body, updatedAt = now, version = current.version + 1, dirty = true),
+            )
+            db.noteBackupDao().delete(backup.id)
+        }
+    }
+
+    suspend fun deleteBackup(id: String) = db.noteBackupDao().delete(id)
 
     /** Soft delete (tombstone) of the note and its links. */
     suspend fun delete(noteId: String) {

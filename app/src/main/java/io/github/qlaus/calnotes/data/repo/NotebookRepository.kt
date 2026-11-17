@@ -116,8 +116,16 @@ class NotebookRepository @Inject constructor(
                     deletedAt = null,
                 ),
             )
+            dao.touch(listOf(notebookId), now)
         }
     }
 
-    suspend fun unlink(linkId: String) = dao.softDeleteLink(linkId, clock.millis())
+    suspend fun unlink(linkId: String) {
+        val link = dao.activeLinks().firstOrNull { it.id == linkId } ?: return
+        val now = clock.millis()
+        db.withTransaction {
+            dao.softDeleteLink(linkId, now)
+            dao.touch(listOf(link.notebookId), now)
+        }
+    }
 }

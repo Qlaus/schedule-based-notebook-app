@@ -66,7 +66,7 @@ object AppModule {
     @Singleton
     fun database(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.NAME)
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(*AppDatabase.ALL_MIGRATIONS)
             .build()
 
     @Provides
@@ -96,6 +96,15 @@ object AppModule {
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(CalendarApi::class.java)
+
+    @Provides
+    @Singleton
+    fun driveApi(client: OkHttpClient, json: Json): io.github.qlaus.calnotes.data.remote.drive.DriveApi = Retrofit.Builder()
+        .baseUrl(io.github.qlaus.calnotes.data.remote.drive.DriveApi.BASE_URL)
+        .client(client)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(io.github.qlaus.calnotes.data.remote.drive.DriveApi::class.java)
 }
 
 @Module

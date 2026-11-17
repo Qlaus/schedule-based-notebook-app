@@ -111,6 +111,39 @@ interface NoteDao {
 
     @Query("SELECT * FROM notes WHERE deletedAt IS NULL AND notebookId = :notebookId")
     suspend fun activeInNotebook(notebookId: String): List<NoteEntity>
+
+    /** Every note including tombstones (for sync). */
+    @Query("SELECT * FROM notes")
+    suspend fun all(): List<NoteEntity>
+
+    @Query("SELECT COUNT(*) FROM notes WHERE dirty = 1")
+    fun observeDirtyCount(): Flow<Int>
+
+    /**
+     * Records an upload of [version]. The note stays dirty if it was edited while uploading
+     * (its version moved on), so the newer edit is sent next time.
+     */
+    @Query(
+        """UPDATE notes SET remoteVersion = :version, remoteFileId = :fileId,
+           dirty = CASE WHEN version = :version THEN 0 ELSE dirty END WHERE id = :id"""
+    )
+    suspend fun markSynced(id: String, version: Long, fileId: String?): Int
+
+    /** Bumps notes whose links changed outside the editor, so the change reaches the cloud. */
+    @Query("UPDATE notes SET dirty = 1, version = version + 1, updatedAt = :now WHERE id IN (:ids)")
+    suspend fun touch(ids: List<String>, now: Long)
+}
+
+@Dao
+interface NoteBackupDao {
+    @Insert
+    suspend fun insert(backup: NoteBackupEntity)
+
+    @Query("SELECT * FROM note_backups WHERE noteId = :noteId ORDER BY createdAt DESC")
+    fun observeForNote(noteId: String): Flow<List<NoteBackupEntity>>
+
+    @Query("DELETE FROM note_backups WHERE id = :id")
+    suspend fun delete(id: String)
 }
 
 @Dao
@@ -144,6 +177,22 @@ interface EventLinkDao {
 
     @Query("SELECT * FROM event_links WHERE deletedAt IS NULL AND eventDeleted = 0")
     suspend fun activeLiving(): List<EventLinkEntity>
+
+    /** All links of a note including tombstones (for sync). */
+    @Query("SELECT * FROM event_links WHERE noteId = :noteId")
+    suspend fun allForNote(noteId: String): List<EventLinkEntity>
+
+    @Query("DELETE FROM event_links WHERE noteId = :noteId")
+    suspend fun deleteAllForNote(noteId: String)
+
+    @Upsert
+    suspend fun upsertAll(links: List<EventLinkEntity>)
+
+    @Query("SELECT DISTINCT noteId FROM event_links WHERE calendarId = :calendarId AND (eventId = :eventId OR (scope = 'SERIES' AND recurringEventId = :eventId))")
+    suspend fun noteIdsForEvent(calendarId: String, eventId: String): List<String>
+
+    @Query("SELECT DISTINCT noteId FROM event_links WHERE calendarId = :calendarId AND (eventId = :eventId OR recurringEventId = :eventId)")
+    suspend fun noteIdsReferencing(calendarId: String, eventId: String): List<String>
 }
 
 @Dao
@@ -183,6 +232,33 @@ interface NotebookDao {
 
     @Query("UPDATE notebook_links SET eventId = :newId WHERE calendarId = :calendarId AND eventId = :oldId")
     suspend fun remapEventId(calendarId: String, oldId: String, newId: String)
+
+    @Query("SELECT DISTINCT notebookId FROM notebook_links WHERE calendarId = :calendarId AND eventId = :eventId")
+    suspend fun notebookIdsReferencing(calendarId: String, eventId: String): List<String>
+
+    @Query("SELECT * FROM notebooks")
+    suspend fun all(): List<NotebookEntity>
+
+    @Query("SELECT * FROM notebook_links WHERE notebookId = :notebookId")
+    suspend fun allLinksFor(notebookId: String): List<NotebookLinkEntity>
+
+    @Query("DELETE FROM notebook_links WHERE notebookId = :notebookId")
+    suspend fun deleteAllLinksFor(notebookId: String)
+
+    @Upsert
+    suspend fun upsertLinks(links: List<NotebookLinkEntity>)
+
+    @Query("SELECT COUNT(*) FROM notebooks WHERE dirty = 1")
+    fun observeDirtyCount(): Flow<Int>
+
+    @Query(
+        """UPDATE notebooks SET remoteVersion = :version, remoteFileId = :fileId,
+           dirty = CASE WHEN version = :version THEN 0 ELSE dirty END WHERE id = :id"""
+    )
+    suspend fun markSynced(id: String, version: Long, fileId: String?): Int
+
+    @Query("UPDATE notebooks SET dirty = 1, version = version + 1, updatedAt = :now WHERE id IN (:ids)")
+    suspend fun touch(ids: List<String>, now: Long)
 }
 
 @Dao

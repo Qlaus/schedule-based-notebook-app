@@ -13,6 +13,7 @@ import io.github.qlaus.calnotes.data.repo.NoteRepository
 import io.github.qlaus.calnotes.data.repo.toKey
 import io.github.qlaus.calnotes.data.repo.toRef
 import io.github.qlaus.calnotes.sync.SyncCoordinator
+import io.github.qlaus.calnotes.sync.DriveStatus
 import io.github.qlaus.calnotes.sync.SyncStatus
 import io.github.qlaus.calnotes.ui.common.Formats
 import io.github.qlaus.calnotes.ui.theme.Accent
@@ -68,6 +69,9 @@ class CalendarViewModel @Inject constructor(
     val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
     val syncStatus: StateFlow<SyncStatus> = syncCoordinator.status
+    val driveStatus: StateFlow<DriveStatus> = syncCoordinator.driveStatus
+    val pendingNoteChanges: StateFlow<Int> =
+        syncCoordinator.pendingNoteChanges.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
     val pendingOps: StateFlow<Int> = calendarRepository.pendingOpCount.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
     val outboxError: StateFlow<String?> = calendarRepository.lastOutboxError
 

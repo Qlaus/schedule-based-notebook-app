@@ -22,6 +22,8 @@ data class NotebookEntity(
     val version: Long,
     val dirty: Boolean,
     val remoteFileId: String?,
+    /** Version last exchanged with Google Drive (null = never uploaded). Added in schema v3. */
+    val remoteVersion: Long? = null,
 )
 
 @Entity(tableName = "notes", indices = [Index("notebookId")])

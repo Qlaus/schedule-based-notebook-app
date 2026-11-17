@@ -24,18 +24,36 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.github.qlaus.calnotes.BuildConfig
 import io.github.qlaus.calnotes.R
+import io.github.qlaus.calnotes.sync.DriveStatus
+import io.github.qlaus.calnotes.ui.calendar.driveLabel
 import io.github.qlaus.calnotes.ui.common.ThinDivider
 
 @Composable
 fun SettingsPane(accountEmail: String?, onSignOut: () -> Unit, modifier: Modifier = Modifier) {
     val vm: SettingsViewModel = hiltViewModel()
     val settings by vm.settings.collectAsState()
+    val drive by vm.driveStatus.collectAsState()
+    val pendingNotes by vm.pendingNoteChanges.collectAsState()
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineLarge)
+
+        SectionCard(stringResource(R.string.drive_section)) {
+            Text(stringResource(R.string.drive_hint), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                driveLabel(drive, pendingNotes),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (drive is DriveStatus.Failed || drive is DriveStatus.NoPermission) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurface,
+            )
+            OutlinedButton(onClick = vm::syncNotesNow, enabled = drive !is DriveStatus.Running) {
+                Text(stringResource(R.string.drive_sync_now))
+            }
+        }
 
         SectionCard(stringResource(R.string.settings_calendar_section)) {
             ToggleRow(

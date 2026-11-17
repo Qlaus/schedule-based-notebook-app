@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.qlaus.calnotes.data.local.EventLinkEntity
+import io.github.qlaus.calnotes.data.local.NoteBackupEntity
 import io.github.qlaus.calnotes.data.local.NotebookEntity
 import io.github.qlaus.calnotes.data.repo.NoteRepository
 import io.github.qlaus.calnotes.data.repo.NotebookRepository
@@ -28,6 +29,9 @@ data class NoteEditorState(
     val body: String = "",
     val links: List<EventLinkEntity> = emptyList(),
     val notebookId: String? = null,
+    /** True while the latest saved version has not reached Google Drive yet. */
+    val cloudPending: Boolean = true,
+    val backups: List<NoteBackupEntity> = emptyList(),
     val saved: Boolean = true,
 )
 
@@ -63,12 +67,22 @@ class NoteEditorViewModel @Inject constructor(
                     body = note.note.body,
                     links = note.links,
                     notebookId = note.note.notebookId,
+                    cloudPending = note.note.dirty,
                 )
             }
             // Keep link info (e.g. "event deleted") live without overwriting what the user types.
             noteRepository.observeNote(id).collect { latest ->
-                if (latest != null) _state.value = _state.value.copy(links = latest.links, notebookId = latest.note.notebookId)
+                if (latest != null) {
+                    _state.value = _state.value.copy(
+                        links = latest.links,
+                        notebookId = latest.note.notebookId,
+                        cloudPending = latest.note.dirty,
+                    )
+                }
             }
+        }
+        viewModelScope.launch {
+            noteRepository.observeBackups(id).collect { list -> _state.value = _state.value.copy(backups = list) }
         }
     }
 
@@ -99,6 +113,20 @@ class NoteEditorViewModel @Inject constructor(
         _state.value = _state.value.copy(missing = true)
         noteRepository.delete(id)
         syncCoordinator.pushChanges() // remove the calendar marker if this was the last note
+    }
+
+    /** Replaces the editor text with a backup (the current text becomes a backup). */
+    fun restore(backup: NoteBackupEntity) {
+        viewModelScope.launch {
+            saveJob?.cancel()
+            saveNow()
+            noteRepository.restoreBackup(backup)
+            _state.value = _state.value.copy(title = backup.title, body = backup.body, saved = true)
+        }
+    }
+
+    fun deleteBackup(id: String) {
+        viewModelScope.launch { noteRepository.deleteBackup(id) }
     }
 
     fun moveToNotebook(notebookId: String?) {

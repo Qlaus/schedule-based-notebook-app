@@ -104,8 +104,23 @@ App start, app foreground (`ProcessLifecycleOwner`), pull-to-refresh, and period
 - Events the user cannot edit (attendee copies, birthdays, read-only calendars) are skipped once and
   remembered; the note still shows in the app.
 
+## Notes sync with Google Drive (Phase 3)
+
+`DriveSync` (two-way, `appDataFolder`, format in [docs/note-format.md](docs/note-format.md)):
+1. One `files.list` with `appProperties` gives every remote item's id/version/updatedAt.
+2. Notebooks, then notes, are resolved with `SyncDecision` (`:core`): upload, download, or conflict
+   (last writer wins; loser saved in `note_backups`, restorable in the note editor).
+3. Uploads write the body file before the metadata file; metadata holds the body's SHA-256, so a
+   reader detects half-finished uploads and retries later. `markSynced` is compare-and-set on
+   `version`, so edits made during an upload are not lost.
+4. Link changes made outside the editor (event deleted, temporary id replaced, notebook linked)
+   bump the owning note/notebook so they propagate.
+
+Triggers: full sync (app start/foreground, pull-to-refresh, periodic worker), and 4 s after local
+note changes. Status (`DriveStatus`) is shown in the calendar header, note editor and settings.
+
 ## Database migrations
 
-Room schema version 2. `AppDatabase.MIGRATION_1_2` adds `notebook_links`, `event_markers` and the
+Room schema version 3 (`MIGRATION_2_3` adds `notebooks.remoteVersion`). `AppDatabase.MIGRATION_1_2` adds `notebook_links`, `event_markers` and the
 `events.markerInTitle/markerInDescription` columns. `MigrationTest` builds a v1 database with data and
 opens it with the current schema, so Room validates the migration in CI.

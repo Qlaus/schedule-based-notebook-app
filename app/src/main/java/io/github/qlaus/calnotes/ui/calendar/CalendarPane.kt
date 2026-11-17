@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.qlaus.calnotes.R
 import io.github.qlaus.calnotes.ui.nav.DetailTarget
+import io.github.qlaus.calnotes.sync.DriveStatus
 import io.github.qlaus.calnotes.sync.SyncStatus
 import io.github.qlaus.calnotes.ui.common.Formats
 import io.github.qlaus.calnotes.ui.theme.Accent
@@ -110,6 +111,8 @@ private fun CalendarHeader(viewModel: CalendarViewModel) {
     val calendars by viewModel.calendars.collectAsState()
     val sync by viewModel.syncStatus.collectAsState()
     val pending by viewModel.pendingOps.collectAsState()
+    val drive by viewModel.driveStatus.collectAsState()
+    val pendingNotes by viewModel.pendingNoteChanges.collectAsState()
     val outboxError by viewModel.outboxError.collectAsState()
     var calendarsMenu by remember { mutableStateOf(false) }
 
@@ -124,10 +127,12 @@ private fun CalendarHeader(viewModel: CalendarViewModel) {
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.headlineLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    syncLabel(sync, pending),
+                    syncLabel(sync, pending) + " · " + driveLabel(drive, pendingNotes),
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (sync is SyncStatus.Failed || sync is SyncStatus.AuthError) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    color = if (sync is SyncStatus.Failed || sync is SyncStatus.AuthError ||
+                        drive is DriveStatus.Failed || drive is DriveStatus.NoPermission
+                    ) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             IconButton(onClick = viewModel::refresh) { Icon(Icons.Outlined.Refresh, stringResource(R.string.refresh)) }
@@ -192,4 +197,15 @@ private fun syncLabel(sync: SyncStatus, pending: Int): String = when {
     sync is SyncStatus.Failed -> stringResource(R.string.sync_failed, sync.message)
     pending > 0 -> stringResource(R.string.sync_pending, pending)
     else -> stringResource(R.string.sync_done)
+}
+
+@Composable
+internal fun driveLabel(drive: DriveStatus, pendingNotes: Int): String = when {
+    drive is DriveStatus.Running -> stringResource(R.string.drive_running)
+    drive is DriveStatus.Offline -> stringResource(R.string.drive_offline)
+    drive is DriveStatus.NoPermission -> stringResource(R.string.drive_no_permission)
+    drive is DriveStatus.Failed -> stringResource(R.string.drive_failed, drive.message)
+    pendingNotes > 0 -> stringResource(R.string.drive_pending, pendingNotes)
+    drive is DriveStatus.Synced -> stringResource(R.string.drive_synced, Formats.time(drive.atMillis))
+    else -> stringResource(R.string.drive_idle)
 }

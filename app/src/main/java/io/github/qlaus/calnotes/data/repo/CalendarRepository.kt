@@ -136,7 +136,7 @@ class CalendarRepository @Inject constructor(
             val response = api.event(calendarId, targetId)
             val gone = response.code() == 404 || response.code() == 410 ||
                 (response.isSuccessful && response.body()?.status == "cancelled")
-            if (gone) linkDao.markEventDeleted(calendarId, targetId, clock.millis())
+            if (gone) markLinksDeleted(calendarId, targetId)
         }
     }
 
@@ -191,7 +191,7 @@ class CalendarRepository @Inject constructor(
         db.withTransaction {
             val targetId = if (wholeSeries && current.recurringEventId != null) current.recurringEventId else eventId
             if (targetId != eventId) eventDao.deleteSeries(calendarId, targetId) else eventDao.deleteIds(calendarId, listOf(eventId))
-            linkDao.markEventDeleted(calendarId, targetId, now)
+            markLinksDeleted(calendarId, targetId)
             if (targetId.startsWith(LOCAL_PREFIX)) {
                 // Never reached Google: just drop the queued create/updates.
                 opsDao.all().filter { it.calendarId == calendarId && it.eventId == targetId }.forEach { opsDao.delete(it.id) }
@@ -214,6 +214,11 @@ class CalendarRepository @Inject constructor(
                         val created = api.insert(op.calendarId, payload(op))
                         val now = clock.millis()
                         db.withTransaction {
+                            // Notes/notebooks pointing at the temporary id must be re-uploaded with the real one.
+                            val notes = linkDao.noteIdsReferencing(op.calendarId, op.eventId)
+                            if (notes.isNotEmpty()) db.noteDao().touch(notes, now)
+                            val notebooks = db.notebookDao().notebookIdsReferencing(op.calendarId, op.eventId)
+                            if (notebooks.isNotEmpty()) db.notebookDao().touch(notebooks, now)
                             eventDao.replaceId(op.calendarId, op.eventId, created.id)
                             linkDao.remapEventId(op.calendarId, op.eventId, created.id, now)
                             linkDao.remapSeriesId(op.calendarId, op.eventId, created.id, now)
@@ -263,6 +268,16 @@ class CalendarRepository @Inject constructor(
             }
         }
         return true
+    }
+
+    /** Marks links to a vanished event and bumps their notes so other devices learn about it. */
+    private suspend fun markLinksDeleted(calendarId: String, eventId: String) {
+        val now = clock.millis()
+        db.withTransaction {
+            val notes = linkDao.noteIdsForEvent(calendarId, eventId)
+            linkDao.markEventDeleted(calendarId, eventId, now)
+            if (notes.isNotEmpty()) db.noteDao().touch(notes, now)
+        }
     }
 
     fun clearOutboxError() {

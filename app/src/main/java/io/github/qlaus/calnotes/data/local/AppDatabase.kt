@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NotebookLinkEntity::class,
         EventMarkerEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun syncStateDao(): SyncStateDao
     abstract fun notebookDao(): NotebookDao
     abstract fun eventMarkerDao(): EventMarkerDao
+    abstract fun noteBackupDao(): NoteBackupDao
 
     companion object {
         const val NAME = "calnotes.db"
@@ -53,5 +54,14 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `events` ADD COLUMN `markerInDescription` INTEGER NOT NULL DEFAULT 0")
             }
         }
+
+        /** v2 → v3 (Phase 3): Drive sync bookkeeping for notebooks. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `notebooks` ADD COLUMN `remoteVersion` INTEGER")
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
     }
 }
