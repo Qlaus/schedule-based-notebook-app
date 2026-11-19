@@ -12,10 +12,17 @@ notebook. Notes are stored offline-first and synced to the user's Google Drive `
 | 1 | Google sign-in, calendar views, event CRUD, local plain-text notes, two-pane | ✅ done (verified on MatePad) |
 | 2 | Notebooks, search, calendar title marker | 🧪 in device test |
 | 3 | Drive `appDataFolder` sync | 🧪 in device test |
+| W | Web app (PWA) for iPhone and desktop, same data via Drive | 🧪 setup / device test |
 | 4 | Local reminders, Markdown/PDF export | — |
 | 5 | Stylus ink (androidx.ink) and rich text | — |
 
 See [docs/PLAN.md](docs/PLAN.md) for the full plan and decisions.
+
+## Web app (iPhone / desktop)
+
+`web/` contains a PWA with the same features, deployed to GitHub Pages:
+`https://qlaus.github.io/schedule-based-notebook-app/` — see [docs/web.md](docs/web.md).
+On iPhone: open in Safari → Share → Add to Home Screen.
 
 ## Key constraints
 
@@ -58,3 +65,4 @@ SHA-1: `39:94:B2:B1:7A:ED:53:62:3A:05:24:FE:80:04:E1:C3:C2:93:80:80`
 - [docs/google-cloud-setup.md](docs/google-cloud-setup.md) – one-time Google Cloud setup
 - [docs/device-setup.md](docs/device-setup.md) – installing on the MatePad / emulator
 - [docs/note-format.md](docs/note-format.md) – platform-independent note storage format
+- [docs/web.md](docs/web.md) – web app (iPhone + desktop): structure, auth, deploy, setup

@@ -1,0 +1,78 @@
+/** Turkish UI strings. Add other languages as files with the same keys. */
+export const tr = {
+  appName: 'Not Takvimi',
+  signinSubtitle: 'Takviminizdeki her etkinliğe not ekleyin. Notlar cihazınızda ve kendi Google hesabınızda saklanır.',
+  signinButton: 'Google ile giriş yap',
+  signinReauth: 'Oturum yenilenemedi. Devam etmek için tekrar giriş yapın; notlarınız bu cihazda duruyor.',
+  signinFailed: (e: string) => `Giriş tamamlanamadı: ${e}`,
+  signinClientMissing: 'Google OAuth istemci kimliği ayarlı değil.',
+  signinIosHint: 'iPhone\'da: Safari\'de Paylaş → Ana Ekrana Ekle ile uygulama gibi kullanabilirsiniz.',
+
+  navCalendar: 'Takvim', navNotebooks: 'Defterler', navSearch: 'Arama', navSettings: 'Ayarlar',
+  modeDay: 'Gün', modeWeek: 'Hafta', modeMonth: 'Ay', modeAgenda: 'Ajanda',
+  today: 'Bugün', previous: 'Önceki', next: 'Sonraki', refresh: 'Yenile', newEvent: 'Yeni etkinlik',
+  calendars: 'Takvimler', allDay: 'Tüm gün', moreEvents: (n: number) => `+${n} daha`, noTitle: '(Başlıksız)',
+  agendaEmpty: 'Bu dönemde etkinlik yok.', pendingSync: 'Gönderilmeyi bekliyor',
+
+  syncRunning: 'Eşitleniyor…', syncDone: 'Takvim güncel', syncOffline: 'Çevrimdışı', syncAuth: 'Oturum yenilenmeli',
+  syncFailed: (m: string) => `Takvim hatası (${m})`, syncPending: (n: number) => `${n} etkinlik değişikliği bekliyor`,
+  outboxRejected: (m: string) => `Google bir değişikliği reddetti (${m}). Takvimdeki güncel hali gösteriliyor.`,
+  renewSession: 'Oturumu yenile',
+
+  driveSection: 'Bulut eşitleme (Google Drive)',
+  driveHint: 'Notlar ve defterler Google Drive\'ınızdaki gizli uygulama alanında saklanır; tablet ve bu cihaz aynı notları görür.',
+  driveSyncNow: 'Şimdi eşitle', driveIdle: 'Henüz eşitlenmedi', driveRunning: 'Notlar eşitleniyor…',
+  driveSynced: (t: string) => `Notlar eşitlendi · ${t}`, driveOffline: 'Çevrimdışı – notlar bu cihazda, bağlantı gelince gönderilecek',
+  driveAuth: 'Oturum yenilenince notlar eşitlenecek',
+  driveNoPermission: 'Drive izni yok. Çıkış yapıp tekrar girin ve Google\'ın izin ekranında Drive kutusunu işaretli bırakın.',
+  driveFailed: (m: string) => `Notlar eşitlenemedi (${m})`, drivePending: (n: number) => `${n} not değişikliği bekliyor`,
+
+  selectEventHint: 'Ayrıntıları görmek için bir etkinlik veya not seçin.',
+  edit: 'Düzenle', delete: 'Sil', close: 'Kapat', back: 'Geri', cancel: 'İptal', save: 'Kaydet', ok: 'Tamam',
+  recurring: 'Tekrarlayan etkinlik', readOnly: 'Bu etkinliği düzenleme izniniz yok.', eventNotFound: 'Etkinlik bulunamadı.',
+  notes: 'Notlar', createNote: 'Not oluştur', addAnotherNote: 'Başka not ekle', noNotesYet: 'Bu etkinlik için henüz not yok.',
+  openInGoogle: 'Google Takvim\'de aç',
+
+  scopeNoteTitle: 'Not nereye bağlansın?', scopeInstance: 'Yalnızca bu etkinlik', scopeSeries: 'Serinin tamamı',
+  scopeEditTitle: 'Hangi etkinlikler değişsin?', scopeEditSeriesHint: 'Serinin tamamında yalnızca başlık, konum ve açıklama değişir.',
+  scopeDeleteTitle: 'Hangi etkinlikler silinsin?', deleteEventTitle: 'Etkinlik silinsin mi?',
+  deleteEventBody: 'Etkinlik Google Takvim\'den silinir. Bağlı notlar silinmez.',
+
+  editorNew: 'Yeni etkinlik', editorEdit: 'Etkinliği düzenle', fieldTitle: 'Başlık', fieldLocation: 'Konum',
+  fieldDescription: 'Açıklama', fieldCalendar: 'Takvim', fieldStarts: 'Başlangıç', fieldEnds: 'Bitiş', fieldRepeat: 'Tekrar',
+  repeat: { NONE: 'Tekrarlanmaz', DAILY: 'Her gün', WEEKLY: 'Her hafta', MONTHLY: 'Her ay', YEARLY: 'Her yıl' },
+  repeatEditHint: 'Tekrar kuralı Google Takvim\'den değiştirilebilir.',
+  errorEndBeforeStart: 'Bitiş, başlangıçtan önce olamaz.', errorNoCalendar: 'Yazılabilir bir takvim bulunamadı.',
+
+  noteTitleHint: 'Başlık', noteBodyHint: 'Yazmaya başlayın…', noteEventDeleted: 'Etkinlik silindi',
+  noteDeleteTitle: 'Not silinsin mi?', noteDeleteBody: 'Bu not kalıcı olarak silinir.', noteSeries: 'Tüm seri',
+  noteCloudPending: 'Buluta gönderilecek', noteCloudSynced: 'Bulutta', noteSaving: 'Kaydediliyor…',
+  noteNotebookNone: 'Defter yok', noteRemoveFromNotebook: 'Defterden çıkar', noteMoveTo: 'Deftere taşı',
+  backupsButton: (n: number) => `Çakışma yedekleri (${n})`, backupsTitle: 'Önceki sürümler',
+  backupsHint: 'Başka bir cihazdaki değişiklikle çakışan sürümler burada saklanır.',
+  backupRestore: 'Bu sürümü geri yükle', backupDelete: 'Yedeği sil',
+  backupOther: 'Diğer cihazdaki sürüm', backupThis: 'Bu cihazdaki sürüm',
+
+  notebooksTitle: 'Defterler', notebookNew: 'Yeni defter', notebookName: 'Defter adı', notebookCreate: 'Oluştur',
+  notebookRename: 'Yeniden adlandır', notebookDelete: 'Defteri sil',
+  notebookDeleteBody: 'Defter silinir. İçindeki notlar silinmez, "Defterde olmayan notlar" bölümüne taşınır.',
+  noteCount: (n: number) => `${n} not`, notebookEmpty: 'Bu defterde henüz not yok.',
+  notebooksEmpty: 'Henüz defter yok. Ders veya proje başına bir defter oluşturabilirsiniz.',
+  unfiled: 'Defterde olmayan notlar', newNote: 'Yeni not', linkNotebook: 'Deftere bağla',
+  linkedNotebook: (n: string) => `Defter: ${n}`, linkedNotebookSeries: (n: string) => `Defter: ${n} · tüm seri`,
+  unlinkNotebook: 'Bağlantıyı kaldır', pickNotebook: 'Defter seçin', scopeNotebookTitle: 'Ne bu deftere bağlansın?',
+  scopeNotebookSeriesHint: 'Tüm seri bağlanırsa, her ders için oluşturduğunuz not bu deftere otomatik eklenir.',
+  standaloneNote: 'Bağımsız not', more: 'Diğer',
+
+  searchHint: 'Not, etkinlik veya tarih ara (ör. fizik, 12 kasım, 2026-11)', searchNotes: 'Notlar', searchEvents: 'Etkinlikler',
+  searchNone: 'Sonuç bulunamadı.', searchStart: 'Aramak için yazmaya başlayın.',
+
+  settingsTitle: 'Ayarlar', settingsCalendar: 'Google Takvim', titleMarker: 'Başlığa 📝 ekle',
+  titleMarkerHint: 'Notu olan etkinliklerin başlığının başına 📝 eklenir. Paylaşılan etkinliklerde diğer katılımcılar da görebilir.',
+  descriptionMarker: 'Açıklamaya not işareti ekle',
+  descriptionMarkerHint: 'Açıklamanın sonuna "📝 Notes attached" satırı eklenir. Mevcut açıklama metniniz değişmez.',
+  account: 'Hesap', signOut: 'Çıkış yap', version: (v: string) => `Web sürümü ${v}`,
+  lastError: 'Son hata (geliştiriciye gönderin)', copy: 'Kopyala', copied: 'Kopyalandı',
+  installHint: 'iPhone\'da uygulama gibi kullanmak için: Safari → Paylaş → Ana Ekrana Ekle.',
+}
+export const t = tr

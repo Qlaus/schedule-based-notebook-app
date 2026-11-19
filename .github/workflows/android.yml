@@ -2,6 +2,10 @@ name: Android build
 
 on:
   push:
+    paths-ignore:
+      - 'web/**'
+      - '.github/workflows/web.yml'
+      - '**.md'
   workflow_dispatch:
 
 permissions:

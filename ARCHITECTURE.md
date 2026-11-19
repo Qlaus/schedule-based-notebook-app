@@ -4,6 +4,7 @@
 
 | Module | Type | Purpose |
 |---|---|---|
+| `web/` | TypeScript PWA | iPhone/desktop client with the same features and data; `web/src/core` ports `:core` (see [docs/web.md](docs/web.md)). |
 | `:core` | Pure Kotlin/JVM | Domain models, event-link matching, note file format, conflict rules. No Android dependency, so a future desktop client can reuse it and tests run fast. |
 | `:app` | Android app | UI (Compose), Room, AppAuth, Retrofit APIs, WorkManager, DI (Hilt). |
 
