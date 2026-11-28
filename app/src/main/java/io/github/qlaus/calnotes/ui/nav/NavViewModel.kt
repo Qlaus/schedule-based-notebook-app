@@ -44,6 +44,14 @@ class NavViewModel @Inject constructor() : ViewModel() {
     private val _stack = MutableStateFlow<List<DetailTarget>>(emptyList())
     val stack: StateFlow<List<DetailTarget>> = _stack.asStateFlow()
 
+    /** Wide layout only: the note editor takes the whole screen (rail and list hidden). */
+    private val _noteFullscreen = MutableStateFlow(false)
+    val noteFullscreen: StateFlow<Boolean> = _noteFullscreen.asStateFlow()
+
+    fun setNoteFullscreen(enabled: Boolean) {
+        _noteFullscreen.value = enabled
+    }
+
     fun selectSection(section: Section) {
         _section.value = section
     }
@@ -68,6 +76,7 @@ class NavViewModel @Inject constructor() : ViewModel() {
 
     /** Handles system back: detail stack first, then notebook list, then calendar section. */
     fun handleBack(): Boolean = when {
+        _noteFullscreen.value && _stack.value.lastOrNull() is DetailTarget.Note -> { _noteFullscreen.value = false; true }
         _stack.value.isNotEmpty() -> { back(); true }
         _section.value == Section.NOTEBOOKS && _notebookSelection.value != NotebookSelection.All -> {
             _notebookSelection.value = NotebookSelection.All; true

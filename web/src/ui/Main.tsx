@@ -20,9 +20,10 @@ const ITEMS: [Section, string, IconName][] = [
 
 /** Wide: rail | section | detail. Narrow (phone): section + tab bar, detail opens full screen. */
 export function Main({ onSignOut }: { onSignOut: () => void }) {
-  const { section, stack } = useNav()
+  const { section, stack, noteFullscreen } = useNav()
   const wide = useWide()
   const detail = stack[stack.length - 1]
+  const fullscreenNote = wide && noteFullscreen && detail?.kind === 'note'
 
   // Browser / Android back: keep one sentinel history entry and turn "back" into in-app navigation.
   useEffect(() => {
@@ -50,12 +51,12 @@ export function Main({ onSignOut }: { onSignOut: () => void }) {
   ))
 
   return (
-    <div className={`app ${wide ? 'wide' : 'narrow'}`}>
-      {wide && <nav className="rail">{navButtons}</nav>}
-      <main className="pane section">{sectionPane}</main>
+    <div className={`app ${wide ? 'wide' : 'narrow'} ${fullscreenNote ? 'note-fullscreen' : ''}`}>
+      {wide && !fullscreenNote && <nav className="rail">{navButtons}</nav>}
+      {!fullscreenNote && <main className="pane section">{sectionPane}</main>}
       {(wide || detail) && (
         <aside className="pane detail">
-          {detail ? <DetailPane detail={detail} depth={stack.length} closeIsBack={!wide} /> : <div className="empty-hint">{t.selectEventHint}</div>}
+          {detail ? <DetailPane detail={detail} depth={stack.length} closeIsBack={!wide} wide={wide} fullscreen={fullscreenNote} /> : <div className="empty-hint">{t.selectEventHint}</div>}
         </aside>
       )}
       {!wide && <nav className="tabbar">{navButtons}</nav>}
@@ -63,7 +64,7 @@ export function Main({ onSignOut }: { onSignOut: () => void }) {
   )
 }
 
-function DetailPane({ detail, depth, closeIsBack }: { detail: Detail; depth: number; closeIsBack: boolean }) {
+function DetailPane({ detail, depth, closeIsBack, wide, fullscreen }: { detail: Detail; depth: number; closeIsBack: boolean; wide: boolean; fullscreen: boolean }) {
   const canGoBack = depth > 1 || closeIsBack
   switch (detail.kind) {
     case 'event':
@@ -75,6 +76,7 @@ function DetailPane({ detail, depth, closeIsBack }: { detail: Detail; depth: num
     case 'note':
       return (
         <NoteEditor key={detail.noteId} noteId={detail.noteId} canGoBack={canGoBack} onBack={nav.back}
+          fullscreen={fullscreen} onToggleFullscreen={wide ? () => nav.setNoteFullscreen(!fullscreen) : undefined}
           onOpenEvent={(c, e) => nav.push({ kind: 'event', calendarId: c, eventId: e })} onDeleted={nav.back} />
       )
     case 'editEvent':

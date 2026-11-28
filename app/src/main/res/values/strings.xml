@@ -183,6 +183,8 @@
     <string name="ink_undo">Geri al</string>
     <string name="ink_size">Kalınlık</string>
     <string name="export">Dışa aktar</string>
+    <string name="fullscreen_enter">Tam ekran</string>
+    <string name="fullscreen_exit">Tam ekrandan çık</string>
     <string name="export_share_md">Markdown olarak paylaş</string>
     <string name="export_save_md">Markdown dosyası olarak kaydet</string>
     <string name="export_pdf">PDF olarak kaydet / yazdır</string>

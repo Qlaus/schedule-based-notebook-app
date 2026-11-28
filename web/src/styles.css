@@ -68,6 +68,7 @@ button { cursor: pointer; }
 .pane.section { flex: 1.4; }
 .pane.detail { flex: 1; background: var(--surface); border-left: 0.5px solid var(--line); }
 .narrow .pane.section { flex: 1; }
+.note-fullscreen .pane.detail { flex: 1; border-left: 0; }
 .narrow .pane.detail { position: fixed; inset: 0; z-index: 20; border: 0; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
 .scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; flex: 1; }
 .empty-hint { margin: auto; padding: 32px; color: var(--text2); text-align: center; }

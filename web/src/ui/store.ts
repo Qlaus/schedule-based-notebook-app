@@ -17,10 +17,12 @@ export interface NavState {
   anchor: string
   notebookSel: NotebookSel
   stack: Detail[]
+  /** Wide layout only: the note editor takes the whole window. */
+  noteFullscreen: boolean
 }
 
 const KEY = 'calnotes.nav'
-const initial: NavState = { section: 'calendar', mode: window.innerWidth < 760 ? 'day' : 'week', anchor: today(), notebookSel: { kind: 'all' }, stack: [] }
+const initial: NavState = { section: 'calendar', mode: window.innerWidth < 760 ? 'day' : 'week', anchor: today(), notebookSel: { kind: 'all' }, stack: [], noteFullscreen: false }
 
 let state: NavState = (() => {
   try {
@@ -57,10 +59,12 @@ export const nav = {
   notebook: (notebookSel: NotebookSel) => set({ notebookSel }),
   show: (d: Detail) => set({ stack: [d] }),
   push: (d: Detail) => set({ stack: [...state.stack, d] }),
-  back: () => set({ stack: state.stack.slice(0, -1) }),
+  back: () => set({ stack: state.stack.slice(0, -1), noteFullscreen: false }),
+  setNoteFullscreen: (noteFullscreen: boolean) => set({ noteFullscreen }),
   /** Back gesture: detail first, then notebook list, then calendar. Returns false when nothing to do. */
   handleBack: (): boolean => {
-    if (state.stack.length) set({ stack: state.stack.slice(0, -1) })
+    if (state.noteFullscreen && state.stack[state.stack.length - 1]?.kind === 'note') set({ noteFullscreen: false })
+    else if (state.stack.length) set({ stack: state.stack.slice(0, -1) })
     else if (state.section === 'notebooks' && state.notebookSel.kind !== 'all') set({ notebookSel: { kind: 'all' } })
     else if (state.section !== 'calendar') set({ section: 'calendar' })
     else return false

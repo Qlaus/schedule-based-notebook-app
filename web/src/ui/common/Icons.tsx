@@ -19,6 +19,8 @@ const P = {
   text: 'M5 6h14M5 10h14M5 14h10M5 18h7',
   inbox: 'M4 13l3-8h10l3 8v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6zM4 13h5l1 2h4l1-2h5',
   share: 'M12 3v12M8 7l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6',
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  collapse: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
   external: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
 } as const
 

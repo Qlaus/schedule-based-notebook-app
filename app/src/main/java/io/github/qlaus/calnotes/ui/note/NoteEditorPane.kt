@@ -24,6 +24,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
@@ -86,6 +88,9 @@ fun NoteEditorPane(
     onBack: () -> Unit,
     onOpenEvent: (calendarId: String, eventId: String) -> Unit,
     onDeleted: () -> Unit,
+    fullscreen: Boolean = false,
+    /** Only in the wide (landscape) layout. */
+    onToggleFullscreen: (() -> Unit)? = null,
 ) {
     val vm: NoteEditorViewModel = hiltViewModel(key = "note/$noteId")
     LaunchedEffect(noteId) { vm.load(noteId) }
@@ -127,6 +132,14 @@ fun NoteEditorPane(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(end = 8.dp),
                 )
+                if (onToggleFullscreen != null) {
+                    IconButton(onClick = onToggleFullscreen) {
+                        Icon(
+                            if (fullscreen) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
+                            stringResource(if (fullscreen) R.string.fullscreen_exit else R.string.fullscreen_enter),
+                        )
+                    }
+                }
                 Box {
                     IconButton(onClick = { exportMenu = true }) { Icon(Icons.Outlined.Share, stringResource(R.string.export)) }
                     DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {

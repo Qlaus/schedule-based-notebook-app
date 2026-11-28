@@ -1,7 +1,7 @@
 /* Note page. In fixed (page) mode all sizes are page units: identical wrapping on every device. */
 .page-outer { display: flex; flex-direction: column; min-height: 0; }
 .page { position: relative; color: var(--text); }
-.page.fixed { width: 640px; padding: 24px 32px 120px; font: 17px/26px Inter, system-ui, sans-serif; }
+.page.fixed { margin: 0 auto; width: 640px; padding: 24px 32px 120px; font: 17px/26px Inter, system-ui, sans-serif; }
 .page.fluid { width: 100%; padding: 8px 28px 120px; font: 17px/1.55 Inter, system-ui, sans-serif; }
 .page-title {
   display: block; width: 100%; border: 0; background: none; resize: none; outline: none; overflow: hidden;

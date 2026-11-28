@@ -15,9 +15,12 @@ import { useWide } from '../hooks'
 import { exportNotesFor, printNotes, shareMarkdown } from '../../export/exporter'
 
 /** Rich-text note page (handwriting shown read-only); autosaves 600 ms after typing stops and flushes on close. */
-export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }: {
+export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted, fullscreen = false, onToggleFullscreen }: {
   noteId: string; canGoBack: boolean; onBack: () => void
   onOpenEvent: (calendarId: string, eventId: string) => void; onDeleted: () => void
+  fullscreen?: boolean
+  /** Only in the wide layout. */
+  onToggleFullscreen?: () => void
 }) {
   const live = useLiveQuery(async () => {
     const note = await db.notes.get(noteId)
@@ -93,6 +96,10 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
         <span className="muted small" style={{ marginRight: 8 }}>
           {!saved ? t.noteSaving : note.dirty ? t.noteCloudPending : t.noteCloudSynced}
         </span>
+        {onToggleFullscreen && (
+          <button className="icon-btn" aria-label={fullscreen ? t.fullscreenExit : t.fullscreenEnter} title={fullscreen ? t.fullscreenExit : t.fullscreenEnter}
+            onClick={onToggleFullscreen}><Icon name={fullscreen ? 'collapse' : 'expand'} /></button>
+        )}
         <button className="icon-btn" aria-label={t.export} onClick={() => setExportMenu(!exportMenu)}><Icon name="share" /></button>
         <button className="icon-btn error" aria-label={t.delete} onClick={() => setAsk('delete')}><Icon name="trash" /></button>
         {exportMenu && (

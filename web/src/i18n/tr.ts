@@ -63,7 +63,7 @@ export const tr = {
   unlinkNotebook: 'Bağlantıyı kaldır', pickNotebook: 'Defter seçin', scopeNotebookTitle: 'Ne bu deftere bağlansın?',
   scopeNotebookSeriesHint: 'Tüm seri bağlanırsa, her ders için oluşturduğunuz not bu deftere otomatik eklenir.',
   standaloneNote: 'Bağımsız not', more: 'Diğer',
-  export: 'Dışa aktar', exportMarkdown: 'Markdown olarak paylaş', exportPdf: 'PDF olarak kaydet / yazdır',
+  export: 'Dışa aktar', fullscreenEnter: 'Tam ekran', fullscreenExit: 'Tam ekrandan çık', exportMarkdown: 'Markdown olarak paylaş', exportPdf: 'PDF olarak kaydet / yazdır',
   exportNotebookMarkdown: 'Defteri Markdown olarak paylaş', exportNotebookPdf: 'Defteri PDF olarak kaydet',
 
   searchHint: 'Not, etkinlik veya tarih ara (ör. fizik, 12 kasım, 2026-11)', searchNotes: 'Notlar', searchEvents: 'Etkinlikler',

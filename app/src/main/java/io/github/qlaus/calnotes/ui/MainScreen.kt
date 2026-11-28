@@ -69,6 +69,7 @@ fun MainScreen(accountEmail: String?, onSignOut: () -> Unit) {
     val section by nav.section.collectAsState()
     val stack by nav.stack.collectAsState()
     val notebookSelection by nav.notebookSelection.collectAsState()
+    val noteFullscreen by nav.noteFullscreen.collectAsState()
     val detail = stack.lastOrNull()
 
     BackHandler(enabled = stack.isNotEmpty() || section != Section.CALENDAR || notebookSelection != io.github.qlaus.calnotes.ui.nav.NotebookSelection.All) {
@@ -91,7 +92,14 @@ fun MainScreen(accountEmail: String?, onSignOut: () -> Unit) {
 
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-            if (maxWidth >= TwoPaneMinWidth) {
+            val wide = maxWidth >= TwoPaneMinWidth
+            val fullscreenNote = wide && noteFullscreen && detail is DetailTarget.Note
+            ImmersiveMode(enabled = fullscreenNote)
+            if (fullscreenNote) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+                    DetailPane(detail, stack.size, nav, closeIsBack = false, wide = true, fullscreen = true)
+                }
+            } else if (wide) {
                 Row(Modifier.fillMaxSize()) {
                     NavigationRail(containerColor = MaterialTheme.colorScheme.background) {
                         Spacer(Modifier.padding(top = 8.dp))
@@ -108,12 +116,12 @@ fun MainScreen(accountEmail: String?, onSignOut: () -> Unit) {
                     sectionPane(Modifier.weight(0.58f).fillMaxHeight())
                     VerticalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                     Box(Modifier.weight(0.42f).fillMaxHeight().background(MaterialTheme.colorScheme.surface)) {
-                        DetailPane(detail, stack.size, nav, closeIsBack = false)
+                        DetailPane(detail, stack.size, nav, closeIsBack = false, wide = true, fullscreen = false)
                     }
                 }
             } else if (detail != null) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-                    DetailPane(detail, stack.size, nav, closeIsBack = true)
+                    DetailPane(detail, stack.size, nav, closeIsBack = true, wide = false, fullscreen = false)
                 }
             } else {
                 Column(Modifier.fillMaxSize()) {
@@ -135,7 +143,7 @@ fun MainScreen(accountEmail: String?, onSignOut: () -> Unit) {
 }
 
 @Composable
-private fun DetailPane(target: DetailTarget?, depth: Int, nav: NavViewModel, closeIsBack: Boolean) {
+private fun DetailPane(target: DetailTarget?, depth: Int, nav: NavViewModel, closeIsBack: Boolean, wide: Boolean, fullscreen: Boolean) {
     val canGoBack = depth > 1 || closeIsBack
     when (target) {
         null -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -157,7 +165,12 @@ private fun DetailPane(target: DetailTarget?, depth: Int, nav: NavViewModel, clo
         is DetailTarget.Note -> NoteEditorPane(
             noteId = target.noteId,
             canGoBack = canGoBack,
-            onBack = nav::back,
+            onBack = {
+                nav.setNoteFullscreen(false)
+                nav.back()
+            },
+            fullscreen = fullscreen,
+            onToggleFullscreen = if (wide) ({ nav.setNoteFullscreen(!fullscreen) }) else null,
             onOpenEvent = { c, e -> nav.push(DetailTarget.Event(c, e)) },
             onDeleted = nav::back,
         )
@@ -171,5 +184,20 @@ private fun DetailPane(target: DetailTarget?, depth: Int, nav: NavViewModel, clo
             // New events get their Google id only after upload, so return to the previous view.
             onSaved = { _, _ -> nav.back() },
         )
+    }
+}
+
+/** Hides the status and navigation bars while the note is full screen (swipe from an edge shows them). */
+@Composable
+private fun ImmersiveMode(enabled: Boolean) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(enabled) {
+        val window = (view.context as? android.app.Activity)?.window
+        val controller = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        if (enabled && controller != null) {
+            controller.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose { controller?.show(androidx.core.view.WindowInsetsCompat.Type.systemBars()) }
     }
 }
