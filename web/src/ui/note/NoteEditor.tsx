@@ -9,8 +9,11 @@ import { dayShort, time } from '../format'
 import { Icon } from '../common/Icons'
 import { ConfirmDialog, Dialog } from '../common/Dialogs'
 import { PaneHead } from '../common/PaneHead'
+import { PageEditor } from '../../editor/PageEditor'
+import { hasInk, parseInk } from '../../editor/ink'
+import { useWide } from '../hooks'
 
-/** Plain-text note editor; autosaves 600 ms after typing stops and flushes on close. */
+/** Rich-text note page (handwriting shown read-only); autosaves 600 ms after typing stops and flushes on close. */
 export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }: {
   noteId: string; canGoBack: boolean; onBack: () => void
   onOpenEvent: (calendarId: string, eventId: string) => void; onDeleted: () => void
@@ -26,9 +29,10 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
   const [saved, setSaved] = useState(true)
   const [menu, setMenu] = useState(false)
   const [ask, setAsk] = useState<null | 'delete' | 'backups'>(null)
+  const [revision, setRevision] = useState(0)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const latest = useRef({ title: '', body: '', dirty: false })
-  const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const wide = useWide()
 
   // Load text once per note (later live updates must not overwrite what the user types).
   useEffect(() => {
@@ -53,15 +57,6 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
   }
   useEffect(() => () => void flush(), [noteId]) // save pending edits when leaving
 
-  // Auto-grow the body field.
-  useEffect(() => {
-    const el = bodyRef.current
-    if (el) {
-      el.style.height = 'auto'
-      el.style.height = `${el.scrollHeight}px`
-    }
-  }, [body])
-
   const edit = (patch: { title?: string; body?: string }) => {
     if (patch.title !== undefined) setTitle(patch.title)
     if (patch.body !== undefined) setBody(patch.body)
@@ -85,8 +80,10 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
     setTitle(b.title)
     setBody(b.body)
     latest.current = { title: b.title, body: b.body, dirty: false }
+    setRevision((r) => r + 1) // remount the editor with the restored text
     pushChangesSoon()
   }
+  const ink = parseInk(note.ink)
 
   return (
     <>
@@ -96,8 +93,8 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
         </span>
         <button className="icon-btn error" aria-label={t.delete} onClick={() => setAsk('delete')}><Icon name="trash" /></button>
       </PaneHead>
-      <div className="scroll section-pad" style={{ paddingTop: 0, paddingLeft: 28, paddingRight: 28 }}>
-        <div className="row wrap" style={{ position: 'relative' }}>
+      <div className="scroll" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="row wrap" style={{ position: 'relative', padding: '0 20px 8px' }}>
           <button className="chip" onClick={() => setMenu(!menu)}>
             <span className="dot" style={{ background: current?.color ?? 'var(--line)' }} />
             {current?.title ?? t.noteNotebookNone}
@@ -121,10 +118,19 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
           )}
         </div>
         {live.backups.length > 0 && (
-          <button className="btn text error" style={{ alignSelf: 'flex-start' }} onClick={() => setAsk('backups')}>{t.backupsButton(live.backups.length)}</button>
+          <button className="btn text error" style={{ alignSelf: 'flex-start', marginLeft: 12 }} onClick={() => setAsk('backups')}>{t.backupsButton(live.backups.length)}</button>
         )}
-        <input className="note-title" placeholder={t.noteTitleHint} value={title ?? ''} onChange={(e) => edit({ title: e.target.value })} />
-        <textarea ref={bodyRef} className="note-body" placeholder={t.noteBodyHint} value={body ?? ''} onChange={(e) => edit({ body: e.target.value })} />
+        {title !== null && body !== null && (
+          <PageEditor
+            noteKey={`${noteId}#${revision}`}
+            initial={{ title, markdown: body }}
+            ink={ink}
+            pageMode={wide || hasInk(ink)}
+            titlePlaceholder={t.noteTitleHint}
+            bodyPlaceholder={t.noteBodyHint}
+            onChange={(c) => edit({ title: c.title, body: c.markdown })}
+          />
+        )}
       </div>
 
       {ask === 'delete' && (

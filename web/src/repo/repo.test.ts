@@ -7,7 +7,7 @@ import * as calendar from './calendar'
 import { reconcileMarkers } from './markers'
 import { syncDrive } from './driveSync'
 import { setSettings } from './settings'
-import { noteBodyName, noteMetaName } from '../core/noteFormat'
+import { noteBodyName, noteInkName, noteMetaName } from '../core/noteFormat'
 import { NOTE_IDS_PROPERTY } from '../core/calendarMarker'
 
 let g: FakeGoogle
@@ -188,6 +188,25 @@ describe('drive sync', () => {
     expect(r.conflicts).toBe(1)
     expect((await db.notes.get(id))!.body).toBe('remote edit')
     expect((await notes.backupsFor(id))[0].body).toBe('local edit')
+  })
+
+  it('handwriting travels as a v2 ink file and is kept when the text is edited elsewhere', async () => {
+    const id = await notes.createStandalone(null, 'Çizim')
+    const ink = JSON.stringify({ formatVersion: 2, pageWidth: 640, strokes: [{ id: 's1', tool: 'pen', color: '#000000', size: 2, points: [1, 2, 0.5, 3, 4, 0.5] }] })
+    await db.notes.update(id, { ink })
+    await syncDrive()
+    const meta = JSON.parse(g.file(noteMetaName(id)).content)
+    expect(meta.formatVersion).toBe(2)
+    expect(meta.inkSha256).toMatch(/^[0-9a-f]{64}$/)
+    expect(g.file(noteInkName(id)).content).toBe(ink)
+
+    useTestDb(`t${dbCounter++}`) // second device (e.g. the web app)
+    await syncDrive()
+    expect((await db.notes.get(id))!.ink).toBe(ink)
+    await notes.updateContent(id, 'Çizim', 'metin eklendi')
+    await syncDrive()
+    expect(g.file(noteInkName(id)).content).toBe(ink)
+    expect(JSON.parse(g.file(noteMetaName(id)).content).formatVersion).toBe(2)
   })
 
   it('half-finished upload (hash mismatch) is skipped', async () => {

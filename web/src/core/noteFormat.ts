@@ -2,7 +2,9 @@
  * Drive storage format v1 (docs/note-format.md), shared with the Android app.
  * Files written here must be byte-for-byte readable by the Kotlin implementation and vice versa.
  */
-export const FORMAT_VERSION = 1
+/** Highest version this client reads. Notes with handwriting are written as v2, others as v1. */
+export const FORMAT_VERSION = 2
+export const formatVersionFor = (hasInk: boolean) => (hasInk ? 2 : 1)
 
 export interface NoteLinkV1 {
   id: string
@@ -29,6 +31,8 @@ export interface NoteFileV1 {
   version: number
   deletedAt: string | null
   bodySha256: string
+  /** v2: SHA-256 of note-<id>.ink.json when the note has handwriting, else null. */
+  inkSha256: string | null
   links: NoteLinkV1[]
 }
 
@@ -58,6 +62,7 @@ export interface NotebookFileV1 {
 export const noteMetaName = (id: string) => `note-${id}.json`
 export const noteBodyName = (id: string) => `note-${id}.md`
 export const notebookName = (id: string) => `notebook-${id}.json`
+export const noteInkName = (id: string) => `note-${id}.ink.json`
 
 /** Same field order and 4-space pretty print as kotlinx.serialization's prettyPrint. */
 export function encodeNote(file: NoteFileV1): string {
@@ -65,6 +70,7 @@ export function encodeNote(file: NoteFileV1): string {
     formatVersion: file.formatVersion, id: file.id, notebookId: file.notebookId, title: file.title,
     createdAt: file.createdAt, updatedAt: file.updatedAt, version: file.version, deletedAt: file.deletedAt,
     bodySha256: file.bodySha256,
+    inkSha256: file.inkSha256 ?? null,
     links: file.links.map((l) => ({
       id: l.id, calendarId: l.calendarId, eventId: l.eventId, recurringEventId: l.recurringEventId,
       instanceStartTime: l.instanceStartTime, scope: l.scope, eventTitleSnapshot: l.eventTitleSnapshot,
@@ -119,6 +125,7 @@ export function decodeNote(text: string): NoteFileV1 | null {
     version: Number(o.version ?? 0),
     deletedAt: strOrNull(o.deletedAt),
     bodySha256: str(o.bodySha256),
+    inkSha256: strOrNull(o.inkSha256),
     links: links.map((l) => ({
       id: str(l.id), calendarId: str(l.calendarId), eventId: str(l.eventId),
       recurringEventId: strOrNull(l.recurringEventId), instanceStartTime: strOrNull(l.instanceStartTime),

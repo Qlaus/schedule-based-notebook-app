@@ -8,6 +8,8 @@ export interface Note {
   notebookId: string | null
   title: string
   body: string
+  /** Handwriting layer (InkDoc JSON, format v2) or null. Edited on the tablet only. */
+  ink?: string | null
   createdAt: number
   updatedAt: number
   deletedAt: number | null

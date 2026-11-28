@@ -108,6 +108,7 @@ describe('note format (NoteFormatTest + Android compatibility)', () => {
     "version": 3,
     "deletedAt": null,
     "bodySha256": "abc",
+    "inkSha256": null,
     "links": [
         {
             "id": "l1",
@@ -132,7 +133,8 @@ describe('note format (NoteFormatTest + Android compatibility)', () => {
     expect(encodeNote(file)).toBe(fromAndroid)
   })
   it('rejects newer format versions and ignores unknown fields', () => {
-    expect(decodeNote(fromAndroid.replace('"formatVersion": 1', '"formatVersion": 2'))).toBeNull()
+    expect(decodeNote(fromAndroid.replace('"formatVersion": 1', '"formatVersion": 3'))).toBeNull()
+    expect(decodeNote(fromAndroid.replace('"formatVersion": 1', '"formatVersion": 2'))?.id).toBe('n1')
     expect(decodeNote(fromAndroid.replace('{', '{"future": 1,'))?.id).toBe('n1')
   })
   it('iso matches java Instant.toString', () => {

@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
+          set +e
           B=https://dl.google.com/dl/android/maven2/androidx/ink
           echo "== all ink-authoring versions"
           curl -s $B/ink-authoring/maven-metadata.xml | grep -oE "<version>[^<]+" | sed 's/<version>//' | tr '\n' ' '; echo
@@ -28,3 +29,8 @@ jobs:
           cd /tmp/br && javap -cp classes.jar androidx.ink.brush.Brush 'androidx.ink.brush.Brush$Companion' androidx.ink.brush.StockBrushes | grep public | head -40
           cd /tmp/re && javap -cp classes.jar 'androidx.ink.rendering.android.canvas.CanvasStrokeRenderer' 'androidx.ink.rendering.android.canvas.CanvasStrokeRenderer$Companion' | grep public | head
           cd /tmp/auth && javap -cp classes.jar androidx.ink.authoring.InProgressStrokesFinishedListener | grep public
+          cd /tmp/auth && javap -cp classes.jar 'androidx.ink.authoring.InProgressStrokeId' | grep public
+          cd /tmp/st && javap -cp classes.jar androidx.ink.strokes.StrokeInputBatch androidx.ink.strokes.ImmutableStrokeInputBatch | grep public | head -40
+          cd /tmp/br && javap -cp classes.jar androidx.ink.brush.BrushFamily androidx.ink.brush.InputToolType | grep public | head -20
+          echo "== compose authoring classes"
+          curl -s -o /tmp/ac.aar "$B/ink-authoring-compose/1.0.0/ink-authoring-compose-1.0.0.aar" && unzip -o -q /tmp/ac.aar classes.jar -d /tmp/ac && unzip -l /tmp/ac/classes.jar | grep -oE "androidx/ink/[A-Za-z/]+\.class" | sort -u | head
