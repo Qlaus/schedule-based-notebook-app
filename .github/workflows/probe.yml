@@ -1,0 +1,18 @@
+name: Probe maven versions
+on:
+  push:
+    paths: ['.github/workflows/probe.yml']
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for a in androidx/ink/ink-authoring androidx/ink/ink-authoring-compose androidx/ink/ink-brush androidx/ink/ink-strokes androidx/ink/ink-rendering androidx/ink/ink-geometry androidx/ink/ink-nativeloader androidx/webkit/webkit; do
+            echo "== $a"
+            curl -s "https://dl.google.com/dl/android/maven2/$a/maven-metadata.xml" | grep -oE "<version>[^<]+" | sed 's/<version>//' | tail -8 | tr '\n' ' '
+            echo
+          done
+          echo "== ink-authoring 1.0.0 pom deps"
+          v=$(curl -s https://dl.google.com/dl/android/maven2/androidx/ink/ink-authoring/maven-metadata.xml | grep -oE "<release>[^<]+" | sed 's/<release>//')
+          echo "release=$v"
+          curl -s "https://dl.google.com/dl/android/maven2/androidx/ink/ink-authoring/$v/ink-authoring-$v.module" | grep -oE '"(group|module|requires|minSdkVersion)": *"[^"]+"' | head -60
