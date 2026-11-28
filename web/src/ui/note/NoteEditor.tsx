@@ -12,6 +12,7 @@ import { PaneHead } from '../common/PaneHead'
 import { PageEditor } from '../../editor/PageEditor'
 import { hasInk, parseInk } from '../../editor/ink'
 import { useWide } from '../hooks'
+import { exportNotesFor, printNotes, shareMarkdown } from '../../export/exporter'
 
 /** Rich-text note page (handwriting shown read-only); autosaves 600 ms after typing stops and flushes on close. */
 export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }: {
@@ -28,6 +29,7 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
   const [body, setBody] = useState<string | null>(null)
   const [saved, setSaved] = useState(true)
   const [menu, setMenu] = useState(false)
+  const [exportMenu, setExportMenu] = useState(false)
   const [ask, setAsk] = useState<null | 'delete' | 'backups'>(null)
   const [revision, setRevision] = useState(0)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -91,7 +93,14 @@ export function NoteEditor({ noteId, canGoBack, onBack, onOpenEvent, onDeleted }
         <span className="muted small" style={{ marginRight: 8 }}>
           {!saved ? t.noteSaving : note.dirty ? t.noteCloudPending : t.noteCloudSynced}
         </span>
+        <button className="icon-btn" aria-label={t.export} onClick={() => setExportMenu(!exportMenu)}><Icon name="share" /></button>
         <button className="icon-btn error" aria-label={t.delete} onClick={() => setAsk('delete')}><Icon name="trash" /></button>
+        {exportMenu && (
+          <div className="menu" onMouseLeave={() => setExportMenu(false)}>
+            <button onClick={async () => { setExportMenu(false); await flush(); await shareMarkdown(title || 'Not', await exportNotesFor([noteId])) }}>{t.exportMarkdown}</button>
+            <button onClick={async () => { setExportMenu(false); await flush(); printNotes(await exportNotesFor([noteId])) }}>{t.exportPdf}</button>
+          </div>
+        )}
       </PaneHead>
       <div className="scroll" style={{ display: 'flex', flexDirection: 'column' }}>
         <div className="row wrap" style={{ position: 'relative', padding: '0 20px 8px' }}>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { t } from '../../i18n/tr'
+import { plainPreview } from '../../core/preview'
 import { db, type EventRow } from '../../data/db'
 import type { EventLinkScope } from '../../core/model'
 import { eventColorHex } from '../../core/googleEventColors'
@@ -107,7 +108,7 @@ export function EventDetail({ calendarId, eventId, canGoBack, onBack, onEdit, on
         {notes.map((n) => (
           <div key={n.id} className="card flat click" onClick={() => onOpenNote(n.id)}>
             <div style={{ fontWeight: 600 }}>{n.title || t.noTitle}</div>
-            {n.body && <div className="muted small" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{n.body}</div>}
+            {n.body && <div className="muted small" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plainPreview(n.body)}</div>}
           </div>
         ))}
         <button className={`btn block ${notes.length === 0 ? 'primary' : 'tonal'}`}

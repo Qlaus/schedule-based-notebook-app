@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { t } from '../../i18n/tr'
+import { plainPreview } from '../../core/preview'
 import { db } from '../../data/db'
 import { createStandalone, notesIn, type NoteWithLinks } from '../../repo/notes'
 import { createNotebook, deleteNotebook, notebooksWithCounts, updateNotebook } from '../../repo/notebooks'
@@ -10,6 +11,7 @@ import { Icon } from '../common/Icons'
 import { ConfirmDialog } from '../common/Dialogs'
 import { nav, useNav } from '../store'
 import { NotebookEditDialog } from './NotebookDialogs'
+import { exportNotesFor, printNotes, shareMarkdown } from '../../export/exporter'
 
 export function NotebooksPane() {
   const { notebookSel } = useNav()
@@ -66,11 +68,14 @@ function NotebookNotes({ notebookId }: { notebookId: string | null }) {
         <button className="icon-btn" aria-label={t.back} onClick={back}><Icon name="back" /></button>
         {notebook && <span className="dot" style={{ background: notebook.color ?? 'var(--accent)', width: 14, height: 14 }} />}
         <h2 className="grow ellipsis" style={{ marginLeft: 8 }}>{title}</h2>
-        {notebook && <button className="icon-btn" aria-label={t.more} onClick={() => setMenu(!menu)}><Icon name="more" /></button>}
+        <button className="icon-btn" aria-label={t.more} onClick={() => setMenu(!menu)}><Icon name="more" /></button>
         {menu && (
           <div className="menu" onMouseLeave={() => setMenu(false)}>
-            <button onClick={() => { setMenu(false); setAsk('edit') }}>{t.notebookRename}</button>
-            <button className="error" onClick={() => { setMenu(false); setAsk('delete') }}>{t.notebookDelete}</button>
+            {/* Oldest first reads like a notebook. */}
+            <button onClick={async () => { setMenu(false); await shareMarkdown(title, await exportNotesFor([...notes].reverse().map((n) => n.note.id))) }}>{t.exportNotebookMarkdown}</button>
+            <button onClick={async () => { setMenu(false); printNotes(await exportNotesFor([...notes].reverse().map((n) => n.note.id))) }}>{t.exportNotebookPdf}</button>
+            {notebook && <button onClick={() => { setMenu(false); setAsk('edit') }}>{t.notebookRename}</button>}
+            {notebook && <button className="error" onClick={() => { setMenu(false); setAsk('delete') }}>{t.notebookDelete}</button>}
           </div>
         )}
       </div>
@@ -104,7 +109,7 @@ export function NoteRow({ n, onClick }: { n: NoteWithLinks; onClick: () => void 
     <div className="card flat click" onClick={onClick}>
       <div style={{ fontWeight: 600 }} className="ellipsis">{n.note.title || t.noTitle}</div>
       <div className="muted small ellipsis">{meta}</div>
-      {n.note.body && <div className="muted small" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{n.note.body}</div>}
+      {n.note.body && <div className="muted small" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plainPreview(n.note.body)}</div>}
     </div>
   )
 }

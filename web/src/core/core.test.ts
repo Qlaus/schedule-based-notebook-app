@@ -145,3 +145,11 @@ describe('note format (NoteFormatTest + Android compatibility)', () => {
     expect(await sha256('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')
   })
 })
+
+import { plainPreview } from './preview'
+describe('plainPreview', () => {
+  it('strips Markdown syntax', () => {
+    expect(plainPreview('## Başlık\n\nBir **kalın** ve *italik*.\n\n- madde\n- [x] bitti\n- [ ] yap\n1. bir'))
+      .toBe('Başlık Bir kalın ve italik. madde ☑ bitti ☐ yap bir')
+  })
+})

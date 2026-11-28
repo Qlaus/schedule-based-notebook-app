@@ -1,0 +1,50 @@
+/* Note page. In fixed (page) mode all sizes are page units: identical wrapping on every device. */
+.page-outer { display: flex; flex-direction: column; min-height: 0; }
+.page { position: relative; color: var(--text); }
+.page.fixed { width: 640px; padding: 24px 32px 120px; font: 17px/26px Inter, system-ui, sans-serif; }
+.page.fluid { width: 100%; padding: 8px 28px 120px; font: 17px/1.55 Inter, system-ui, sans-serif; }
+.page-title {
+  display: block; width: 100%; border: 0; background: none; resize: none; outline: none; overflow: hidden;
+  font: 700 28px/36px Inter, system-ui, sans-serif; letter-spacing: -0.4px; padding: 0; margin: 0 0 12px; color: inherit;
+  field-sizing: content;
+}
+.page-body .ProseMirror { outline: none; min-height: 200px; word-wrap: break-word; white-space: pre-wrap; }
+.page-body .ProseMirror p { margin: 0 0 10px; }
+.page-body .ProseMirror h1 { font-size: 26px; line-height: 34px; font-weight: 700; margin: 18px 0 8px; }
+.page-body .ProseMirror h2 { font-size: 22px; line-height: 30px; font-weight: 700; margin: 16px 0 6px; }
+.page-body .ProseMirror h3 { font-size: 19px; line-height: 28px; font-weight: 600; margin: 14px 0 4px; }
+.page-body .ProseMirror ul, .page-body .ProseMirror ol { padding-left: 26px; margin: 0 0 10px; }
+.page-body .ProseMirror li p { margin: 0; }
+.page-body .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 2px; }
+.page-body .ProseMirror ul[data-type="taskList"] li { display: flex; gap: 10px; align-items: flex-start; }
+.page-body .ProseMirror ul[data-type="taskList"] li > label { flex: none; margin-top: 4px; }
+.page-body .ProseMirror ul[data-type="taskList"] li > label input { width: 18px; height: 18px; accent-color: var(--accent); }
+.page-body .ProseMirror ul[data-type="taskList"] li > div { flex: 1; }
+.page-body .ProseMirror li[data-checked="true"] > div { color: var(--text2); text-decoration: line-through; }
+.page-body .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder); color: var(--text2); opacity: 0.6; float: left; height: 0; pointer-events: none;
+}
+.ink-layer { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+.editor-toolbar {
+  position: sticky; top: 0; z-index: 4; display: flex; gap: 2px; padding: 6px 12px; overflow-x: auto;
+  background: var(--surface); border-bottom: 0.5px solid var(--line); scrollbar-width: none;
+}
+.editor-toolbar .tb {
+  border: 0; background: none; min-width: 38px; height: 36px; border-radius: 9px; font: 600 15px Inter, system-ui, sans-serif; color: var(--text);
+}
+.editor-toolbar .tb.on { background: var(--accent-soft); color: var(--accent); }
+.editor-toolbar .tb:disabled { opacity: 0.35; }
+.tb-sep { width: 1px; background: var(--line); margin: 6px 4px; flex: none; }
+
+/* Printing / PDF export */
+.print-root { display: none; }
+.print-meta { font: 13px Inter, system-ui, sans-serif; color: #6e6e73; padding: 0 32px; }
+@media print {
+  @page { margin: 12mm; }
+  body * { visibility: hidden; }
+  .print-root, .print-root * { visibility: visible; }
+  .print-root { display: block; position: absolute; left: 0; top: 0; width: 640px; color: #1c1c1e; background: #fff; }
+  .print-note { break-after: page; }
+  .print-note .page { padding-bottom: 24px; }
+}

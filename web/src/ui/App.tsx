@@ -4,6 +4,8 @@ import { clearCalendarCache } from '../repo/calendar'
 import { recordError, syncAll } from '../repo/sync'
 import { Main } from './Main'
 import { SignIn } from './SignIn'
+import { usePrintJob } from '../export/exporter'
+import { PrintNotes } from '../export/PrintNotes'
 
 type Phase = { kind: 'loading' } | { kind: 'signedOut'; error: string | null; reauth: boolean } | { kind: 'ready' }
 
@@ -15,6 +17,7 @@ const needsRenewal = () => {
 
 export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
+  const printJob = usePrintJob()
 
   useEffect(() => {
     void (async () => {
@@ -67,10 +70,13 @@ export function App() {
   if (phase.kind === 'loading') return null
   if (phase.kind === 'signedOut') return <SignIn error={phase.error} reauth={phase.reauth} />
   return (
-    <Main onSignOut={async () => {
-      await signOut()
-      await clearCalendarCache()
-      setPhase({ kind: 'signedOut', error: null, reauth: false })
-    }} />
+    <>
+      <Main onSignOut={async () => {
+        await signOut()
+        await clearCalendarCache()
+        setPhase({ kind: 'signedOut', error: null, reauth: false })
+      }} />
+      {printJob && <PrintNotes notes={printJob} />}
+    </>
   )
 }
