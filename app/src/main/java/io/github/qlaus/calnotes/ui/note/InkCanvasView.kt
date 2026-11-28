@@ -144,9 +144,9 @@ class InkCanvasView(context: Context) : FrameLayout(context) {
         val base = Color.parseColor(colorHex)
         return if (tool == InkTool.HIGHLIGHTER) {
             val translucent = Color.argb(90, Color.red(base), Color.green(base), Color.blue(base))
-            Brush.createWithColorIntArgb(StockBrushes.highlighterLatest, translucent, sizeFor(tool) * scale, 0.1f)
+            Brush.createWithColorIntArgb(StockBrushes.highlighter(), translucent, sizeFor(tool) * scale, 0.1f)
         } else {
-            Brush.createWithColorIntArgb(StockBrushes.pressurePenLatest, base, sizePage * scale, 0.1f)
+            Brush.createWithColorIntArgb(StockBrushes.pressurePen(), base, sizePage * scale, 0.1f)
         }
     }
 
