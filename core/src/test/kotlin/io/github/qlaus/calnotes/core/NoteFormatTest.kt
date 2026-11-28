@@ -37,8 +37,10 @@ class NoteFormatTest {
 
     @Test
     fun newerFormatVersionIsRejected() {
-        val text = NoteFormat.encodeNote(file).replace("\"formatVersion\": 1", "\"formatVersion\": 2")
+        val text = NoteFormat.encodeNote(file).replace("\"formatVersion\": 1", "\"formatVersion\": 3")
         assertNull(NoteFormat.decodeNote(text))
+        val v2 = NoteFormat.encodeNote(file).replace("\"formatVersion\": 1", "\"formatVersion\": 2")
+        assertEquals("n1", NoteFormat.decodeNote(v2)?.id)
     }
 
     @Test

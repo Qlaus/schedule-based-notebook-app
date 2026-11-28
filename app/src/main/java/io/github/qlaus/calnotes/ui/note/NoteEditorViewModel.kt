@@ -27,11 +27,14 @@ data class NoteEditorState(
     val missing: Boolean = false,
     val title: String = "",
     val body: String = "",
+    val ink: String? = null,
     val links: List<EventLinkEntity> = emptyList(),
     val notebookId: String? = null,
     /** True while the latest saved version has not reached Google Drive yet. */
     val cloudPending: Boolean = true,
     val backups: List<NoteBackupEntity> = emptyList(),
+    /** Bumped when the text is replaced from outside the editor (backup restore): the page reloads. */
+    val revision: Int = 0,
     val saved: Boolean = true,
 )
 
@@ -42,6 +45,7 @@ class NoteEditorViewModel @Inject constructor(
     notebookRepository: NotebookRepository,
     private val syncCoordinator: SyncCoordinator,
     @ApplicationScope private val appScope: CoroutineScope,
+    val exporter: io.github.qlaus.calnotes.export.NoteExporter,
 ) : ViewModel() {
 
     val notebooks: StateFlow<List<NotebookEntity>> =
@@ -65,6 +69,7 @@ class NoteEditorViewModel @Inject constructor(
                     loaded = true,
                     title = note.note.title,
                     body = note.note.body,
+                    ink = note.note.ink,
                     links = note.links,
                     notebookId = note.note.notebookId,
                     cloudPending = note.note.dirty,
@@ -89,6 +94,23 @@ class NoteEditorViewModel @Inject constructor(
     fun onTitleChange(value: String) = edit { it.copy(title = value) }
 
     fun onBodyChange(value: String) = edit { it.copy(body = value) }
+
+    /** From the page editor: title and Markdown body together. */
+    fun onContentChange(title: String, body: String) {
+        if (title != _state.value.title || body != _state.value.body) edit { it.copy(title = title, body = body) }
+    }
+
+    private var inkJob: Job? = null
+
+    /** Handwriting changed (stroke added/erased/undone): saved shortly after, outside the text autosave. */
+    fun onInkChange(ink: String?) {
+        _state.value = _state.value.copy(ink = ink)
+        inkJob?.cancel()
+        inkJob = viewModelScope.launch {
+            delay(AUTOSAVE_DELAY_MS)
+            noteId?.let { noteRepository.updateInk(it, ink) }
+        }
+    }
 
     private fun edit(transform: (NoteEditorState) -> NoteEditorState) {
         _state.value = transform(_state.value).copy(saved = false)
@@ -121,7 +143,7 @@ class NoteEditorViewModel @Inject constructor(
             saveJob?.cancel()
             saveNow()
             noteRepository.restoreBackup(backup)
-            _state.value = _state.value.copy(title = backup.title, body = backup.body, saved = true)
+            _state.value = _state.value.copy(title = backup.title, body = backup.body, saved = true, revision = _state.value.revision + 1)
         }
     }
 
@@ -136,6 +158,11 @@ class NoteEditorViewModel @Inject constructor(
 
     override fun onCleared() {
         if (!_state.value.saved) appScope.launch { saveNow() }
+        if (inkJob?.isActive == true) {
+            val id = noteId
+            val ink = _state.value.ink
+            if (id != null) appScope.launch { noteRepository.updateInk(id, ink) }
+        }
         super.onCleared()
     }
 

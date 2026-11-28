@@ -174,7 +174,7 @@ fun EventDetailPane(
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(note.title.ifBlank { stringResource(R.string.no_title) }, style = MaterialTheme.typography.titleMedium)
                                 if (note.body.isNotBlank()) {
-                                    Text(note.body, maxLines = 3, overflow = TextOverflow.Ellipsis,
+                                    Text(io.github.qlaus.calnotes.core.export.ExportMarkdown.plainPreview(note.body), maxLines = 3, overflow = TextOverflow.Ellipsis,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }

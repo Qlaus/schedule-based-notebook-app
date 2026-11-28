@@ -99,6 +99,11 @@ dependencies {
     implementation(libs.work.runtime)
     implementation(libs.datastore.preferences)
 
+    implementation(libs.ink.authoring)
+    implementation(libs.ink.brush)
+    implementation(libs.ink.strokes)
+    implementation(libs.androidx.webkit)
+
     implementation(libs.appauth)
     implementation(libs.androidx.browser)
     implementation(libs.tink.android)

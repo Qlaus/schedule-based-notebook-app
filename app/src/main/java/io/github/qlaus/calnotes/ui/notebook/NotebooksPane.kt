@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import io.github.qlaus.calnotes.R
+import io.github.qlaus.calnotes.core.export.ExportMarkdown
 import io.github.qlaus.calnotes.data.local.NotebookWithCount
 import io.github.qlaus.calnotes.data.repo.NoteWithLinks
 import io.github.qlaus.calnotes.ui.common.ConfirmDialog
@@ -167,6 +168,11 @@ private fun NotebookNotes(
         NotebookSelection.Unfiled -> stringResource(R.string.unfiled_notes)
         else -> notebook?.title.orEmpty()
     }
+    val scope = rememberCoroutineScope()
+    val activity = androidx.compose.ui.platform.LocalContext.current as android.app.Activity
+    val saveMd = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("text/markdown"),
+    ) { uri -> if (uri != null) scope.launch { vm.exporter.saveMarkdown(uri, vm.exporter.collect(notes.reversed().map { it.note.id })) } }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -175,10 +181,24 @@ private fun NotebookNotes(
             Spacer(Modifier.width(12.dp))
             Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f), maxLines = 1,
                 overflow = TextOverflow.Ellipsis)
-            if (notebook != null) {
-                Box {
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, null) }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, null) }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    // Oldest first reads like a notebook.
+                    val ids = { notes.reversed().map { it.note.id } }
+                    DropdownMenuItem(text = { Text(stringResource(R.string.export_notebook_share_md)) }, onClick = {
+                        menu = false
+                        scope.launch { vm.exporter.shareMarkdown(activity, title, vm.exporter.collect(ids())) }
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.export_notebook_save_md)) }, onClick = {
+                        menu = false
+                        saveMd.launch("${ExportMarkdown.safeFileName(title)}.md")
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.export_notebook_pdf)) }, onClick = {
+                        menu = false
+                        scope.launch { vm.exporter.printPdf(activity, title, vm.exporter.collect(ids())) }
+                    })
+                    if (notebook != null) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.notebook_rename)) }, onClick = { menu = false; editing = true })
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.notebook_delete), color = MaterialTheme.colorScheme.error) },
@@ -240,7 +260,7 @@ internal fun NoteRow(n: NoteWithLinks, onClick: () -> Unit) {
             }
             Text(meta, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             if (n.note.body.isNotBlank()) {
-                Text(n.note.body, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium,
+                Text(ExportMarkdown.plainPreview(n.note.body), maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

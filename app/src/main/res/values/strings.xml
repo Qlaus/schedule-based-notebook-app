@@ -172,6 +172,24 @@
     <string name="backup_from_other_device">Diğer cihazdaki sürüm</string>
     <string name="backup_from_this_device">Bu cihazdaki sürüm</string>
 
+    <!-- Ink & export -->
+    <string name="mode_text">Yazı</string>
+    <string name="mode_pen">Kalem</string>
+    <string name="tool_pen">Kalem</string>
+    <string name="tool_highlighter">Fosforlu</string>
+    <string name="tool_eraser">Silgi</string>
+    <string name="stylus_only">Yalnızca kalem</string>
+    <string name="stylus_only_hint">Açıkken parmak ve avuç içi sayfayı kaydırır, sadece kalem yazar. M-Pencil çizmiyorsa kapatın.</string>
+    <string name="ink_undo">Geri al</string>
+    <string name="ink_size">Kalınlık</string>
+    <string name="export">Dışa aktar</string>
+    <string name="export_share_md">Markdown olarak paylaş</string>
+    <string name="export_save_md">Markdown dosyası olarak kaydet</string>
+    <string name="export_pdf">PDF olarak kaydet / yazdır</string>
+    <string name="export_notebook_share_md">Defteri Markdown olarak paylaş</string>
+    <string name="export_notebook_save_md">Defteri Markdown dosyası olarak kaydet</string>
+    <string name="export_notebook_pdf">Defteri PDF olarak kaydet</string>
+
     <!-- Crash report -->
     <string name="crash_title">Uygulama beklenmedik şekilde kapandı</string>
     <string name="crash_body">Aşağıdaki hata ayrıntısını kopyalayıp geliştiriciye gönderin. Ayrıntıda oturum bilgisi veya not içeriği yoktur.</string>

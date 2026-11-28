@@ -3,7 +3,6 @@ name: Android build
 on:
   push:
     paths-ignore:
-      - 'web/**'
       - '.github/workflows/web.yml'
       - '**.md'
   workflow_dispatch:
@@ -28,6 +27,17 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
+
+      # The note editor is the shared web editor, bundled into the APK's assets.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build editor assets
+        working-directory: web
+        run: npm ci && npm run build:editor
 
       - name: Check no Play Services / Firebase
         run: ./gradlew checkNoGms --stacktrace

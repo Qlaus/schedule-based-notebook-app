@@ -14,7 +14,10 @@ import java.time.Instant
  * only, and bump [FORMAT_VERSION] for anything a v1 reader could misinterpret.
  */
 object NoteFormat {
-    const val FORMAT_VERSION = 1
+    /** Highest version this client reads. Notes with handwriting are written as v2, others as v1. */
+    const val FORMAT_VERSION = 2
+
+    fun formatVersionFor(hasInk: Boolean) = if (hasInk) 2 else 1
 
     val json = Json {
         prettyPrint = true
@@ -26,6 +29,7 @@ object NoteFormat {
     fun noteMetaName(id: String) = "note-$id.json"
     fun noteBodyName(id: String) = "note-$id.md"
     fun notebookName(id: String) = "notebook-$id.json"
+    fun noteInkName(id: String) = "note-$id.ink.json"
 
     fun encodeNote(file: NoteFileV1): String = json.encodeToString(NoteFileV1.serializer(), file)
     fun encodeNotebook(file: NotebookFileV1): String = json.encodeToString(NotebookFileV1.serializer(), file)
@@ -53,7 +57,7 @@ object NoteFormat {
 
 @Serializable
 data class NoteFileV1(
-    val formatVersion: Int = NoteFormat.FORMAT_VERSION,
+    val formatVersion: Int = 1,
     val id: String,
     val notebookId: String? = null,
     val title: String,
@@ -62,6 +66,8 @@ data class NoteFileV1(
     val version: Long,
     val deletedAt: String? = null,
     val bodySha256: String,
+    /** v2: SHA-256 of note-<id>.ink.json when the note has handwriting, else null. */
+    val inkSha256: String? = null,
     val links: List<NoteLinkV1> = emptyList(),
 )
 
@@ -84,7 +90,7 @@ data class NoteLinkV1(
 
 @Serializable
 data class NotebookFileV1(
-    val formatVersion: Int = NoteFormat.FORMAT_VERSION,
+    val formatVersion: Int = 1,
     val id: String,
     val title: String,
     val color: String? = null,

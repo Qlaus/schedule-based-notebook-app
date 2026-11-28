@@ -256,6 +256,30 @@ class DriveSyncTest {
     }
 
     @Test
+    fun handwritingTravelsAsV2InkFile() = runBlocking {
+        val id = notes.createStandalone(null, "Çizim")
+        val ink = io.github.qlaus.calnotes.core.ink.InkDoc(
+            strokes = listOf(io.github.qlaus.calnotes.core.ink.InkStroke("s1", "pen", "#000000", 2f, listOf(1f, 2f, 0.5f, 3f, 4f, 0.5f))),
+        ).encode()
+        notes.updateInk(id, ink)
+        sync.sync()
+        val meta = NoteFormat.decodeNote(drive.files.values.single { it.name == NoteFormat.noteMetaName(id) }.content)!!
+        assertEquals(2, meta.formatVersion)
+        assertEquals(NoteFormat.sha256(ink), meta.inkSha256)
+        assertEquals(ink, drive.files.values.single { it.name == NoteFormat.noteInkName(id) }.content)
+
+        val other = TestSupport.db()
+        try {
+            val api = Retrofit.Builder().baseUrl(server.url("/")).client(OkHttpClient())
+                .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build().create(DriveApi::class.java)
+            DriveSync(api, other, json, TestSupport.clock, TestSupport.account).sync()
+            assertEquals(ink, other.noteDao().get(id)!!.ink)
+        } finally {
+            other.close()
+        }
+    }
+
+    @Test
     fun deleteTravelsAsTombstone() = runBlocking {
         val id = notes.createStandalone(null, "Silinecek")
         sync.sync()

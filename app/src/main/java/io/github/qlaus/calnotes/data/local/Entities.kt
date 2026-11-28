@@ -32,7 +32,7 @@ data class NoteEntity(
     val accountId: String,
     val notebookId: String?,
     val title: String,
-    /** Markdown body (plain text in Phase 1). */
+    /** Markdown body (GFM: headings, emphasis, lists, task lists). */
     val body: String,
     val createdAt: Long,
     val updatedAt: Long,
@@ -41,6 +41,8 @@ data class NoteEntity(
     val dirty: Boolean,
     val remoteFileId: String?,
     val remoteVersion: Long?,
+    /** Handwriting layer (InkDoc JSON, format v2) or null. Added in schema v4. */
+    val ink: String? = null,
 )
 
 @Entity(

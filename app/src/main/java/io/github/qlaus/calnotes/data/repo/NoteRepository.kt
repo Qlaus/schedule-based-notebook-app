@@ -109,6 +109,14 @@ class NoteRepository @Inject constructor(
         return id
     }
 
+    /** Saves the handwriting layer (null or empty removes it). */
+    suspend fun updateInk(noteId: String, ink: String?) {
+        val current = noteDao.get(noteId) ?: return
+        val value = ink?.takeIf { io.github.qlaus.calnotes.core.ink.InkDoc.parse(it)?.isEmpty == false }
+        if (current.deletedAt != null || current.ink == value) return
+        noteDao.upsert(current.copy(ink = value, updatedAt = clock.millis(), version = current.version + 1, dirty = true))
+    }
+
     /** Moves a note into a notebook, or out of any notebook with null. */
     suspend fun moveToNotebook(noteId: String, notebookId: String?) {
         val current = noteDao.get(noteId) ?: return

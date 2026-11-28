@@ -74,6 +74,7 @@ class MigrationTest {
             assertNotNull(note)
             assertEquals("Newton yasaları", note.body)
             assertEquals(3, note.version)
+            assertEquals(null, note.ink)
             val event = room.eventDao().get("cal", "ev1")
             assertNotNull(event)
             assertFalse(event.markerInTitle)

@@ -23,6 +23,8 @@ coroutines = "1.10.2"
 junit = "4.13.2"
 robolectric = "4.14.1"
 androidxTestCore = "1.6.1"
+ink = "1.0.0"
+webkit = "1.12.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -68,6 +70,11 @@ junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-core = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
+
+ink-authoring = { module = "androidx.ink:ink-authoring", version.ref = "ink" }
+ink-brush = { module = "androidx.ink:ink-brush", version.ref = "ink" }
+ink-strokes = { module = "androidx.ink:ink-strokes", version.ref = "ink" }
+androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

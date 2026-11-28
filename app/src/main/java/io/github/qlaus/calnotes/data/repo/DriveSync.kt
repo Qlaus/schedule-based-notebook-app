@@ -51,7 +51,7 @@ class DriveSync @Inject constructor(
     private val notebookDao = db.notebookDao()
     private val backupDao = db.noteBackupDao()
 
-    private data class Remote(val meta: DriveFile, val body: DriveFile?, val version: Long, val updatedAt: Long)
+    private data class Remote(val meta: DriveFile, val body: DriveFile?, val ink: DriveFile?, val version: Long, val updatedAt: Long)
 
     suspend fun sync(): DriveSyncResult {
         val files = listAll()
@@ -66,12 +66,14 @@ class DriveSync @Inject constructor(
             .mapValues { (id, _) -> pick(NoteFormat.notebookName(id))!! }
         val localNotebooks = notebookDao.all().associateBy { it.id }
         for (id in remoteNotebooks.keys + localNotebooks.keys) {
-            result = result + syncNotebook(localNotebooks[id], remoteNotebooks[id]?.let { remoteOf(it, null) }, id)
+            result = result + syncNotebook(localNotebooks[id], remoteNotebooks[id]?.let { remoteOf(it, null, null) }, id)
         }
 
         val remoteNotes = files.filter { it.appProperties?.get(P_KIND) == KIND_NOTE }
             .mapNotNull { f -> f.appProperties?.get(P_ID) }.distinct()
-            .associateWith { id -> pick(NoteFormat.noteMetaName(id))?.let { remoteOf(it, pick(NoteFormat.noteBodyName(id))) } }
+            .associateWith { id ->
+                pick(NoteFormat.noteMetaName(id))?.let { remoteOf(it, pick(NoteFormat.noteBodyName(id)), pick(NoteFormat.noteInkName(id))) }
+            }
         val localNotes = noteDao.all().associateBy { it.id }
         for (id in remoteNotes.keys + localNotes.keys) {
             result = result + syncNote(localNotes[id], remoteNotes[id], id)
@@ -105,7 +107,9 @@ class DriveSync @Inject constructor(
     private suspend fun uploadNote(note: NoteEntity, remote: Remote?, version: Long) {
         val links = linkDao.allForNote(note.id)
         val body = if (note.deletedAt != null) "" else note.body
+        val ink = note.ink?.takeIf { note.deletedAt == null && it.isNotBlank() }
         val file = NoteFileV1(
+            formatVersion = NoteFormat.formatVersionFor(ink != null),
             id = note.id,
             notebookId = note.notebookId,
             title = note.title,
@@ -114,11 +118,13 @@ class DriveSync @Inject constructor(
             version = version,
             deletedAt = NoteFormat.isoOrNull(note.deletedAt),
             bodySha256 = NoteFormat.sha256(body),
+            inkSha256 = ink?.let { NoteFormat.sha256(it) },
             links = links.map { it.toFile() },
         )
-        val props = props(KIND_NOTE, note.id, version, note.updatedAt, note.deletedAt != null)
-        // Body first, metadata last (the metadata hash tells readers whether the body is complete).
+        val props = props(KIND_NOTE, note.id, version, note.updatedAt, note.deletedAt != null, file.formatVersion)
+        // Body (and ink) first, metadata last: the metadata's hashes tell readers whether the rest is complete.
         upsertFile(remote?.body?.id, NoteFormat.noteBodyName(note.id), props, body, "text/markdown; charset=UTF-8")
+        if (ink != null) upsertFile(remote?.ink?.id, NoteFormat.noteInkName(note.id), props, ink, "application/json; charset=UTF-8")
         val meta = upsertFile(remote?.meta?.id, NoteFormat.noteMetaName(note.id), props, NoteFormat.encodeNote(file), "application/json; charset=UTF-8")
         noteDao.markSynced(note.id, version, meta.id)
     }
@@ -128,6 +134,11 @@ class DriveSync @Inject constructor(
         val file = NoteFormat.decodeNote(api.download(remote.meta.id).string()) ?: return false
         val body = remote.body?.let { api.download(it.id).string() } ?: ""
         if (NoteFormat.sha256(body) != file.bodySha256) return false // body upload not finished yet
+        val ink = file.inkSha256?.let { expected ->
+            val text = remote.ink?.let { api.download(it.id).string() } ?: return false
+            if (NoteFormat.sha256(text) != expected) return false
+            text
+        }
 
         db.withTransaction {
             if (backupOf != null) backup(backupOf, linkDao.allForNote(backupOf.id), "conflict-local")
@@ -145,6 +156,7 @@ class DriveSync @Inject constructor(
                     dirty = false,
                     remoteFileId = remote.meta.id,
                     remoteVersion = file.version,
+                    ink = ink,
                 ),
             )
             linkDao.deleteAllForNote(file.id)
@@ -279,20 +291,20 @@ class DriveSync @Inject constructor(
         }
     }
 
-    private fun remoteOf(meta: DriveFile, body: DriveFile?): Remote? {
+    private fun remoteOf(meta: DriveFile, body: DriveFile?, ink: DriveFile?): Remote? {
         val p = meta.appProperties ?: return null
         val version = p[P_VERSION]?.toLongOrNull() ?: return null
         val updatedAt = p[P_UPDATED]?.toLongOrNull() ?: 0
-        return Remote(meta, body, version, updatedAt)
+        return Remote(meta, body, ink, version, updatedAt)
     }
 
-    private fun props(kind: String, id: String, version: Long, updatedAt: Long, deleted: Boolean) = mapOf(
+    private fun props(kind: String, id: String, version: Long, updatedAt: Long, deleted: Boolean, format: Int = 1) = mapOf(
         P_KIND to kind,
         P_ID to id,
         P_VERSION to version.toString(),
         P_UPDATED to updatedAt.toString(),
         P_DELETED to deleted.toString(),
-        P_FORMAT to NoteFormat.FORMAT_VERSION.toString(),
+        P_FORMAT to format.toString(),
     )
 
     // --- mapping ---

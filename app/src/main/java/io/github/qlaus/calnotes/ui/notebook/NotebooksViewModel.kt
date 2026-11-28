@@ -25,6 +25,7 @@ import javax.inject.Inject
 class NotebooksViewModel @Inject constructor(
     private val notebookRepository: NotebookRepository,
     private val noteRepository: NoteRepository,
+    val exporter: io.github.qlaus.calnotes.export.NoteExporter,
 ) : ViewModel() {
 
     private val selection = MutableStateFlow<NotebookSelection>(NotebookSelection.All)
