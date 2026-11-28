@@ -120,8 +120,25 @@ App start, app foreground (`ProcessLifecycleOwner`), pull-to-refresh, and period
 Triggers: full sync (app start/foreground, pull-to-refresh, periodic worker), and 4 s after local
 note changes. Status (`DriveStatus`) is shown in the calendar header, note editor and settings.
 
+## Note page: rich text + handwriting (Phase 5)
+
+- One editor for both platforms: the web app's TipTap editor (`web/src/editor`), WYSIWYG with
+  headings, emphasis, lists and task lists, stored as Markdown. Android loads the same code from
+  `assets/editor` (built from `web/` by `npm run build:editor`, done in CI) in a WebView through
+  `WebViewAssetLoader`, talking over a small JS bridge (`window.calnotes` ↔ `CalNotesNative`).
+- Fixed page (640 units, bundled Inter font) zoomed to the screen, so wrapping is identical everywhere
+  and the full-page handwriting layer stays aligned with the text.
+- Android handwriting: `InkCanvasView` over the WebView. androidx.ink `InProgressStrokesView` draws
+  wet ink with low latency; finished strokes are converted to page units, rendered by the page (SVG),
+  and the wet stroke is removed after `postVisualStateCallback` (no flicker). Whole-stroke eraser and
+  undo work on the `InkDoc`. Palm rejection: stylus-only drawing, fingers scroll, finger touches
+  right after stylus activity are ignored; the stylus eraser end / button erases.
+- Export: Markdown (handwriting embedded as SVG image) via share sheet or Storage Access Framework;
+  PDF via the system print dialog from an off-screen WebView rendering the same page layout. The web
+  app uses download/share and `window.print()`.
+
 ## Database migrations
 
-Room schema version 3 (`MIGRATION_2_3` adds `notebooks.remoteVersion`). `AppDatabase.MIGRATION_1_2` adds `notebook_links`, `event_markers` and the
+Room schema version 4 (`MIGRATION_2_3` adds `notebooks.remoteVersion`, `MIGRATION_3_4` adds `notes.ink`). `AppDatabase.MIGRATION_1_2` adds `notebook_links`, `event_markers` and the
 `events.markerInTitle/markerInDescription` columns. `MigrationTest` builds a v1 database with data and
 opens it with the current schema, so Room validates the migration in CI.

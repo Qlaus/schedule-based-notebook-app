@@ -42,5 +42,8 @@
 - Last-writer-wins with conflict backups (restorable), tombstones, compare-and-set uploads.
 - Status in header / note editor / settings ("Şimdi eşitle"); push 4 s after edits.
 - Second-device test: reinstall (clear data) or another Android device, same Google account.
-## Phase 4 — Local reminders, Markdown/PDF export
-## Phase 5 — Stylus ink (androidx.ink) and rich text; revisit note/sync format
+## Phase 4 — Markdown/PDF export 🧪 (reminders dropped by decision)
+## Phase 5 — Full-page handwriting + WYSIWYG rich text 🧪
+Decisions: full-page freeform ink layer (not drawing boxes), full WYSIWYG (not live Markdown), web shows
+handwriting read-only. Implementation: shared TipTap editor (web + Android WebView), fixed 640-unit page
+with bundled font, androidx.ink 1.0.0 on Android, format v2 (`note-<id>.ink.json`).

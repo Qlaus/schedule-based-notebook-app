@@ -1,8 +1,10 @@
 # Note storage format
 
-**Format version: `1`** (used since Phase 3). Implemented in `:core` → `core/format/NoteFormat.kt`.
-Phase 5 (ink + rich text) will add fields or bump the version; readers must **skip** (never
-overwrite) files whose `formatVersion` is higher than they understand.
+**Format versions: `1` and `2`.** Implemented in `:core` (`core/format/NoteFormat.kt`,
+`core/ink/InkDoc.kt`) and mirrored in the web app (`web/src/core/noteFormat.ts`, `web/src/editor/ink.ts`).
+Notes **with handwriting are written as v2**, all other notes as v1. Readers must **skip** (never
+overwrite) files whose `formatVersion` is higher than they understand, so older app versions leave v2
+notes alone.
 
 ## Location
 
@@ -14,8 +16,9 @@ web/PC client) can read it.
 
 | File | Content |
 |---|---|
-| `note-<noteId>.md` | Note body, UTF-8 Markdown (CommonMark). Plain text in v1. |
-| `note-<noteId>.json` | Note metadata (`NoteFileV1`). Written **after** the body. |
+| `note-<noteId>.md` | Note body, UTF-8 Markdown (GFM subset: headings 1–3, bold, italic, strikethrough, bullet/numbered lists, task lists `- [ ]` / `- [x]`). |
+| `note-<noteId>.ink.json` | v2 only: handwriting layer (see below). |
+| `note-<noteId>.json` | Note metadata (`NoteFileV1`). Written **after** the body and ink. |
 | `notebook-<notebookId>.json` | Notebook (`NotebookFileV1`), including its event links. |
 
 IDs are UUID strings generated on the device that created the item.
@@ -49,6 +52,7 @@ If several files share a name (e.g. after an interrupted retry), readers use the
   "version": 7,
   "deletedAt": null,
   "bodySha256": "<hex sha-256 of the UTF-8 body>",
+  "inkSha256": null,
   "links": [
     {
       "id": "…",
@@ -74,6 +78,24 @@ If several files share a name (e.g. after an interrupted retry), readers use the
   later (the writer has not finished).
 - `deletedAt != null` marks a tombstone; the body is empty. Tombstones are kept so other devices learn
   about the deletion.
+
+- `inkSha256` (v2): SHA-256 of the ink file; `null` in v1. A reader that finds a mismatch (or no ink
+  file) keeps its copy and retries later.
+
+## `note-<id>.ink.json` (v2)
+
+```json
+{"formatVersion":2,"pageWidth":640,"strokes":[
+  {"id":"…","tool":"pen","color":"#1C1C1E","size":2.5,"points":[40.0,150.0,0.62, 41.2,151.0,0.65]}
+]}
+```
+
+- The note is a **page `pageWidth` (640) units wide**. Title and rich text are laid out on that page
+  with the bundled Inter font (title 28/36, body 17/26, padding 24/32), so text wraps identically on
+  every client and strokes stay on the right lines. Clients scale the page to the screen.
+- `points`: flat `x, y, pressure` triples in page units (y downwards from the top of the page,
+  pressure 0..1). `tool`: `pen` (width scales with pressure) or `highlighter` (translucent, fixed width).
+- Only the Android app edits handwriting; the web app renders it read-only.
 
 ## `notebook-<id>.json` (v1)
 

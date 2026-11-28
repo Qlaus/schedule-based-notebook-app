@@ -13,8 +13,8 @@ notebook. Notes are stored offline-first and synced to the user's Google Drive `
 | 2 | Notebooks, search, calendar title marker | ✅ done |
 | 3 | Drive `appDataFolder` sync | ✅ done |
 | W | Web app (PWA) for iPhone and desktop, same data via Drive | ✅ done (verified on iPhone) |
-| 4 | Local reminders, Markdown/PDF export | — |
-| 5 | Stylus ink (androidx.ink) and rich text | — |
+| 4 | Markdown/PDF export (reminders dropped) | 🧪 in device test |
+| 5 | Full-page stylus ink (androidx.ink) and WYSIWYG rich text | 🧪 in device test |
 
 See [docs/PLAN.md](docs/PLAN.md) for the full plan and decisions.
 
