@@ -7,12 +7,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for a in androidx/ink/ink-authoring androidx/ink/ink-authoring-compose androidx/ink/ink-brush androidx/ink/ink-strokes androidx/ink/ink-rendering androidx/ink/ink-geometry androidx/ink/ink-nativeloader androidx/webkit/webkit; do
-            echo "== $a"
-            curl -s "https://dl.google.com/dl/android/maven2/$a/maven-metadata.xml" | grep -oE "<version>[^<]+" | sed 's/<version>//' | tail -8 | tr '\n' ' '
-            echo
+          B=https://dl.google.com/dl/android/maven2/androidx/ink
+          echo "== all ink-authoring versions"
+          curl -s $B/ink-authoring/maven-metadata.xml | grep -oE "<version>[^<]+" | sed 's/<version>//' | tr '\n' ' '; echo
+          for v in 1.0.0; do
+            for m in ink-authoring ink-strokes ink-brush ink-rendering ink-geometry; do
+              echo "== $m $v"
+              curl -s "$B/$m/$v/$m-$v.module" | grep -oE '"(module|requires)": *"[^"]+"' | paste - - | head -20
+              curl -s -o /tmp/a.aar "$B/$m/$v/$m-$v.aar" && unzip -p /tmp/a.aar META-INF/com/android/build/gradle/aar-metadata.properties 2>/dev/null
+              unzip -p /tmp/a.aar AndroidManifest.xml | grep -o 'minSdkVersion="[0-9]*"'
+            done
           done
-          echo "== ink-authoring 1.0.0 pom deps"
-          v=$(curl -s https://dl.google.com/dl/android/maven2/androidx/ink/ink-authoring/maven-metadata.xml | grep -oE "<release>[^<]+" | sed 's/<release>//')
-          echo "release=$v"
-          curl -s "https://dl.google.com/dl/android/maven2/androidx/ink/ink-authoring/$v/ink-authoring-$v.module" | grep -oE '"(group|module|requires|minSdkVersion)": *"[^"]+"' | head -60
+          echo "== ink-authoring 1.0.0 classes"
+          curl -s -o /tmp/auth.aar "$B/ink-authoring/1.0.0/ink-authoring-1.0.0.aar" && unzip -o -q /tmp/auth.aar classes.jar -d /tmp/auth && unzip -l /tmp/auth/classes.jar | grep -oE "androidx/ink/authoring/[A-Za-z]+\.class" | sort -u | head -40
+          curl -s -o /tmp/st.aar "$B/ink-strokes/1.0.0/ink-strokes-1.0.0.aar" && unzip -o -q /tmp/st.aar classes.jar -d /tmp/st && unzip -l /tmp/st/classes.jar | grep -oE "androidx/ink/strokes/[A-Za-z]+\.class" | sort -u
+          curl -s -o /tmp/br.aar "$B/ink-brush/1.0.0/ink-brush-1.0.0.aar" && unzip -o -q /tmp/br.aar classes.jar -d /tmp/br && unzip -l /tmp/br/classes.jar | grep -oE "androidx/ink/brush/[A-Za-z]+\.class" | sort -u
+          curl -s -o /tmp/re.aar "$B/ink-rendering/1.0.0/ink-rendering-1.0.0.aar" && unzip -o -q /tmp/re.aar classes.jar -d /tmp/re && unzip -l /tmp/re/classes.jar | grep -oE "androidx/ink/rendering/[A-Za-z/]+\.class" | sort -u
+          cd /tmp/auth && javap -cp classes.jar androidx.ink.authoring.InProgressStrokesView | grep -E "public" | head -40
+          cd /tmp/st && javap -cp classes.jar androidx.ink.strokes.MutableStrokeInputBatch androidx.ink.strokes.Stroke androidx.ink.strokes.StrokeInput | grep -E "public" | head -60
+          cd /tmp/br && javap -cp classes.jar androidx.ink.brush.Brush 'androidx.ink.brush.Brush$Companion' androidx.ink.brush.StockBrushes | grep public | head -40
+          cd /tmp/re && javap -cp classes.jar 'androidx.ink.rendering.android.canvas.CanvasStrokeRenderer' 'androidx.ink.rendering.android.canvas.CanvasStrokeRenderer$Companion' | grep public | head
+          cd /tmp/auth && javap -cp classes.jar androidx.ink.authoring.InProgressStrokesFinishedListener | grep public

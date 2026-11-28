@@ -8,4 +8,6 @@ class MemoryStorage {
   removeItem(k: string) { this.m.delete(k) }
   clear() { this.m.clear() }
 }
-Object.assign(globalThis, { localStorage: new MemoryStorage(), sessionStorage: new MemoryStorage() })
+if (typeof (globalThis as { localStorage?: unknown }).localStorage === 'undefined') {
+  Object.assign(globalThis, { localStorage: new MemoryStorage(), sessionStorage: new MemoryStorage() })
+}
